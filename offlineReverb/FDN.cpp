@@ -30,6 +30,7 @@
 //#define FDN_NO_DIFFUSER_WITH_GAMMA true   //NOT GOOD RESULT (THE 'ARE' NEEDS MORE DETAILS ON THE ROOM)
 
 
+
 inline void FDN::setGains(){
     Room = Cuboid(8.0f, 5.0f, 3.1f);
     ssLoc = Vector3D(7.0f, 2.65f,1.2f);
