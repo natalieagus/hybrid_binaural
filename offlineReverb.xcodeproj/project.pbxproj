@@ -1,0 +1,343 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2C0A8AD11E78474600E0C9F2 /* SingleTapDelay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0A8AD01E78474600E0C9F2 /* SingleTapDelay.cpp */; };
+		2C0A8AD51E792C9900E0C9F2 /* TransposeGain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0A8AD31E792C9900E0C9F2 /* TransposeGain.cpp */; };
+		2C0A8AD61E792F6E00E0C9F2 /* TransposeGain.hpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0A8AD41E792C9900E0C9F2 /* TransposeGain.hpp */; };
+		2C73BEB31E71A2DC00753DA8 /* MonteCarlo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C73BEB21E71A2DC00753DA8 /* MonteCarlo.cpp */; };
+		2CB800081EB7BEC9004D4BBA /* FirstOrderFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB800061EB7BEC9004D4BBA /* FirstOrderFilter.cpp */; };
+		2CEA3E771E7128DA00DC0092 /* BMMultiTapDelay.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E751E7128DA00DC0092 /* BMMultiTapDelay.c */; };
+		2CEA3E7D1E71296400DC0092 /* TPCircularBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E791E71296400DC0092 /* TPCircularBuffer.c */; };
+		2CEA3E7E1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E7B1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.c */; };
+		2CEA3E811E713E8100DC0092 /* Vector3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E7F1E713E8100DC0092 /* Vector3D.cpp */; };
+		2CEA3E861E713EF200DC0092 /* Cuboid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E821E713EF200DC0092 /* Cuboid.cpp */; };
+		2CEA3E871E713EF200DC0092 /* Plane3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E841E713EF200DC0092 /* Plane3D.cpp */; };
+		2CEA3E901E713FDA00DC0092 /* Gains.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E8D1E713FDA00DC0092 /* Gains.cpp */; };
+		3A9464311BA9032300818778 /* wavRead.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A94642F1BA9032300818778 /* wavRead.cpp */; };
+		3AA66E581B0B1196007B75E7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AA66E571B0B1196007B75E7 /* main.cpp */; };
+		3AA66E601B0B1255007B75E7 /* FDN.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AA66E5E1B0B1255007B75E7 /* FDN.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3AA66E521B0B1196007B75E7 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2C0A8ACF1E78474600E0C9F2 /* SingleTapDelay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SingleTapDelay.h; sourceTree = "<group>"; };
+		2C0A8AD01E78474600E0C9F2 /* SingleTapDelay.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SingleTapDelay.cpp; sourceTree = "<group>"; };
+		2C0A8AD21E7848F300E0C9F2 /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
+		2C0A8AD31E792C9900E0C9F2 /* TransposeGain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TransposeGain.cpp; sourceTree = "<group>"; };
+		2C0A8AD41E792C9900E0C9F2 /* TransposeGain.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TransposeGain.hpp; sourceTree = "<group>"; };
+		2C73BEB11E71A2DC00753DA8 /* MonteCarlo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MonteCarlo.hpp; sourceTree = "<group>"; };
+		2C73BEB21E71A2DC00753DA8 /* MonteCarlo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MonteCarlo.cpp; sourceTree = "<group>"; };
+		2CB800061EB7BEC9004D4BBA /* FirstOrderFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FirstOrderFilter.cpp; sourceTree = "<group>"; };
+		2CB800071EB7BEC9004D4BBA /* FirstOrderFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FirstOrderFilter.h; sourceTree = "<group>"; };
+		2CEA3E751E7128DA00DC0092 /* BMMultiTapDelay.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BMMultiTapDelay.c; sourceTree = "<group>"; };
+		2CEA3E761E7128DA00DC0092 /* BMMultiTapDelay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BMMultiTapDelay.h; sourceTree = "<group>"; };
+		2CEA3E791E71296400DC0092 /* TPCircularBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = TPCircularBuffer.c; path = offlineReverb/TPCircularBuffer/TPCircularBuffer.c; sourceTree = "<group>"; };
+		2CEA3E7A1E71296400DC0092 /* TPCircularBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TPCircularBuffer.h; path = offlineReverb/TPCircularBuffer/TPCircularBuffer.h; sourceTree = "<group>"; };
+		2CEA3E7B1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "TPCircularBuffer+AudioBufferList.c"; path = "offlineReverb/TPCircularBuffer/TPCircularBuffer+AudioBufferList.c"; sourceTree = "<group>"; };
+		2CEA3E7C1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "TPCircularBuffer+AudioBufferList.h"; path = "offlineReverb/TPCircularBuffer/TPCircularBuffer+AudioBufferList.h"; sourceTree = "<group>"; };
+		2CEA3E7F1E713E8100DC0092 /* Vector3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Vector3D.cpp; sourceTree = "<group>"; };
+		2CEA3E801E713E8100DC0092 /* Vector3D.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Vector3D.hpp; sourceTree = "<group>"; };
+		2CEA3E821E713EF200DC0092 /* Cuboid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Cuboid.cpp; sourceTree = "<group>"; };
+		2CEA3E831E713EF200DC0092 /* Cuboid.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Cuboid.hpp; sourceTree = "<group>"; };
+		2CEA3E841E713EF200DC0092 /* Plane3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Plane3D.cpp; sourceTree = "<group>"; };
+		2CEA3E851E713EF200DC0092 /* Plane3D.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Plane3D.hpp; sourceTree = "<group>"; };
+		2CEA3E8D1E713FDA00DC0092 /* Gains.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Gains.cpp; sourceTree = "<group>"; };
+		2CEA3E8E1E713FDA00DC0092 /* Gains.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Gains.hpp; sourceTree = "<group>"; };
+		3A94642F1BA9032300818778 /* wavRead.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = wavRead.cpp; sourceTree = "<group>"; };
+		3A9464301BA9032300818778 /* wavRead.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wavRead.h; sourceTree = "<group>"; };
+		3AA66E541B0B1196007B75E7 /* offlineReverb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = offlineReverb; sourceTree = BUILT_PRODUCTS_DIR; };
+		3AA66E571B0B1196007B75E7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		3AA66E5E1B0B1255007B75E7 /* FDN.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FDN.cpp; sourceTree = "<group>"; };
+		3AA66E5F1B0B1255007B75E7 /* FDN.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FDN.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3AA66E511B0B1196007B75E7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3AA66E4B1B0B1196007B75E7 = {
+			isa = PBXGroup;
+			children = (
+				2CEA3E791E71296400DC0092 /* TPCircularBuffer.c */,
+				2CEA3E7A1E71296400DC0092 /* TPCircularBuffer.h */,
+				2CEA3E7B1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.c */,
+				2CEA3E7C1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.h */,
+				3AA66E561B0B1196007B75E7 /* offlineReverb */,
+				3AA66E551B0B1196007B75E7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3AA66E551B0B1196007B75E7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3AA66E541B0B1196007B75E7 /* offlineReverb */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3AA66E561B0B1196007B75E7 /* offlineReverb */ = {
+			isa = PBXGroup;
+			children = (
+				2CB800061EB7BEC9004D4BBA /* FirstOrderFilter.cpp */,
+				2CB800071EB7BEC9004D4BBA /* FirstOrderFilter.h */,
+				2CEA3E751E7128DA00DC0092 /* BMMultiTapDelay.c */,
+				2CEA3E761E7128DA00DC0092 /* BMMultiTapDelay.h */,
+				2C0A8AD21E7848F300E0C9F2 /* Constants.h */,
+				2CEA3E821E713EF200DC0092 /* Cuboid.cpp */,
+				2CEA3E831E713EF200DC0092 /* Cuboid.hpp */,
+				2C0A8AD31E792C9900E0C9F2 /* TransposeGain.cpp */,
+				2C0A8AD41E792C9900E0C9F2 /* TransposeGain.hpp */,
+				3AA66E5E1B0B1255007B75E7 /* FDN.cpp */,
+				3AA66E5F1B0B1255007B75E7 /* FDN.h */,
+				2CEA3E8D1E713FDA00DC0092 /* Gains.cpp */,
+				2CEA3E8E1E713FDA00DC0092 /* Gains.hpp */,
+				3AA66E571B0B1196007B75E7 /* main.cpp */,
+				2C73BEB21E71A2DC00753DA8 /* MonteCarlo.cpp */,
+				2C73BEB11E71A2DC00753DA8 /* MonteCarlo.hpp */,
+				2CEA3E841E713EF200DC0092 /* Plane3D.cpp */,
+				2CEA3E851E713EF200DC0092 /* Plane3D.hpp */,
+				2C0A8AD01E78474600E0C9F2 /* SingleTapDelay.cpp */,
+				2C0A8ACF1E78474600E0C9F2 /* SingleTapDelay.h */,
+				2CEA3E7F1E713E8100DC0092 /* Vector3D.cpp */,
+				2CEA3E801E713E8100DC0092 /* Vector3D.hpp */,
+				3A94642F1BA9032300818778 /* wavRead.cpp */,
+				3A9464301BA9032300818778 /* wavRead.h */,
+			);
+			path = offlineReverb;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3AA66E531B0B1196007B75E7 /* offlineReverb */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3AA66E5B1B0B1196007B75E7 /* Build configuration list for PBXNativeTarget "offlineReverb" */;
+			buildPhases = (
+				3AA66E501B0B1196007B75E7 /* Sources */,
+				3AA66E511B0B1196007B75E7 /* Frameworks */,
+				3AA66E521B0B1196007B75E7 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = offlineReverb;
+			productName = offlineReverb;
+			productReference = 3AA66E541B0B1196007B75E7 /* offlineReverb */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3AA66E4C1B0B1196007B75E7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0820;
+				ORGANIZATIONNAME = Hans;
+				TargetAttributes = {
+					3AA66E531B0B1196007B75E7 = {
+						CreatedOnToolsVersion = 6.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 3AA66E4F1B0B1196007B75E7 /* Build configuration list for PBXProject "offlineReverb" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 3AA66E4B1B0B1196007B75E7;
+			productRefGroup = 3AA66E551B0B1196007B75E7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3AA66E531B0B1196007B75E7 /* offlineReverb */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3AA66E501B0B1196007B75E7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2C0A8AD61E792F6E00E0C9F2 /* TransposeGain.hpp in Sources */,
+				2CEA3E771E7128DA00DC0092 /* BMMultiTapDelay.c in Sources */,
+				2C0A8AD11E78474600E0C9F2 /* SingleTapDelay.cpp in Sources */,
+				2CEA3E861E713EF200DC0092 /* Cuboid.cpp in Sources */,
+				2CEA3E811E713E8100DC0092 /* Vector3D.cpp in Sources */,
+				2C73BEB31E71A2DC00753DA8 /* MonteCarlo.cpp in Sources */,
+				3AA66E601B0B1255007B75E7 /* FDN.cpp in Sources */,
+				2CB800081EB7BEC9004D4BBA /* FirstOrderFilter.cpp in Sources */,
+				2C0A8AD51E792C9900E0C9F2 /* TransposeGain.cpp in Sources */,
+				3AA66E581B0B1196007B75E7 /* main.cpp in Sources */,
+				2CEA3E7D1E71296400DC0092 /* TPCircularBuffer.c in Sources */,
+				3A9464311BA9032300818778 /* wavRead.cpp in Sources */,
+				2CEA3E901E713FDA00DC0092 /* Gains.cpp in Sources */,
+				2CEA3E871E713EF200DC0092 /* Plane3D.cpp in Sources */,
+				2CEA3E7E1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3AA66E591B0B1196007B75E7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3AA66E5A1B0B1196007B75E7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		3AA66E5C1B0B1196007B75E7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_FAST_MATH = NO;
+				GCC_STRICT_ALIASING = YES;
+				GCC_UNROLL_LOOPS = NO;
+				LLVM_LTO = NO;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3AA66E5D1B0B1196007B75E7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_FAST_MATH = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_STRICT_ALIASING = YES;
+				GCC_UNROLL_LOOPS = YES;
+				LLVM_LTO = YES;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3AA66E4F1B0B1196007B75E7 /* Build configuration list for PBXProject "offlineReverb" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3AA66E591B0B1196007B75E7 /* Debug */,
+				3AA66E5A1B0B1196007B75E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3AA66E5B1B0B1196007B75E7 /* Build configuration list for PBXNativeTarget "offlineReverb" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3AA66E5C1B0B1196007B75E7 /* Debug */,
+				3AA66E5D1B0B1196007B75E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3AA66E4C1B0B1196007B75E7 /* Project object */;
+}
