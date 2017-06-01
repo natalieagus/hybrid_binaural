@@ -18,60 +18,62 @@ using std::fstream;
 using std::string;
 using namespace std;
 
-int processWaveInput(int type, long samples, std::ifstream* inFile, std::ofstream* outFile)
-{
-    // open the output file
-    std::string outFilename = "./Users/natalieagus/Desktop/offlineReverb/offlineReverb/audioData/audio";
-    if (type > 0) outFilename += "H";
-    else outFilename += "C";
-    outFilename += std::to_string(abs(type));
-    outFilename += ".csv";
-    outFile->open(outFilename);
-    
-    // open the input file
-    std::string inFilename = "./Users/natalieagus/Desktop/offlineReverb/offlineReverb/audioData/arpSound.wav";
-    inFile->open(inFilename, std::ifstream::binary);
-    
-    FDN reverb = FDN(type);
-    reverb.fileResponse(samples, inFile, outFile);
-    
-    std::cout << "file output saved for type " << type << ".\n";
-    
-    outFile->close();
-    inFile->close();
-    
-    return 0;
-}
+//int processWaveInput(int type, long samples, std::ifstream* inFile, std::ofstream* outFile)
+//{
+//    // open the output file
+//    std::string outFilename = "./Users/natalieagus/Desktop/offlineReverb/offlineReverb/audioData/audio";
+//    if (type > 0) outFilename += "H";
+//    else outFilename += "C";
+//    outFilename += std::to_string(abs(type));
+//    outFilename += ".csv";
+//    outFile->open(outFilename);
+//    
+//    // open the input file
+//    std::string inFilename = "./Users/natalieagus/Desktop/offlineReverb/offlineReverb/audioData/arpSound.wav";
+//    inFile->open(inFilename, std::ifstream::binary);
+//    
+//    FDN reverb = FDN(type);
+//    reverb.fileResponse(samples, inFile, outFile);
+//    
+//    std::cout << "file output saved for type " << type << ".\n";
+//    
+//    outFile->close();
+//    inFile->close();
+//    
+//    return 0;
+//}
 
-double timeReverb(int type, float decayTime, float seconds){
-    FDN reverb = FDN(type);
-    reverb.setDecayTime(decayTime);
-    
-    reverb.testProcess(1000);
-    std::clock_t start = clock();
-    reverb.testProcess(seconds * FS);
-    std::clock_t end = clock();
-    
-    return double(end - start) / CLOCKS_PER_SEC;
-}
 
-void saveImpulse(int type, int samples, std::ofstream* of){
+
+void saveImpulse(int type, int samples, std::ofstream* ofL, std::ofstream* ofR){
     
 //    clock_t begin = clock();
-    std::string filename = "impulse";
-    if (type > 0) filename += "H";
-    else filename += "C";
-    filename += std::to_string(abs(type));
-    filename += ".csv";
+    std::string filenameL = "impulse";
+    if (type > 0) filenameL += "H";
+    else filenameL += "C";
+    filenameL += std::to_string(abs(type));
+    filenameL += "Left.csv";
     
     
-    of->open(filename);
+    ofL->open(filenameL);
+    
+
+    std::string filenameR = "impulse";
+    if (type > 0) filenameR += "H";
+    else filenameR += "C";
+    filenameR += std::to_string(abs(type));
+    filenameR += "Right.csv";
+    
+    
+    ofR->open(filenameR);
+    
     
     FDN reverb = FDN(type);
-    reverb.impulseResponse(samples, of);
+    reverb.impulseResponse(samples, ofL, ofR);
     
     std::cout << "impulse saved for type " << type << ".\n";
-    of->close();
+    ofL->close();
+    ofR->close();
 //    
 //    clock_t end = clock();
 //    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
@@ -79,20 +81,20 @@ void saveImpulse(int type, int samples, std::ofstream* of){
 //    printf("Time elapsed: %f ms\n", elapsed_msecs);
 }
 
-void saveDensity(int type, int samples, std::ofstream* of){
-    std::string filename = "/Users/hans/Desktop/offlineReverb/impulseData/density";
-    if (type > 0) filename += "H";
-    else filename += "C";
-    filename += std::to_string(abs(type));
-    filename += ".csv";
-    of->open(filename);
-    
-    FDN reverb = FDN(type);
-    reverb.densityResponse(samples, of);
-    
-    std::cout << "density saved for type " << type << ".\n";
-    of->close();
-}
+//void saveDensity(int type, int samples, std::ofstream* of){
+//    std::string filename = "/Users/hans/Desktop/offlineReverb/impulseData/density";
+//    if (type > 0) filename += "H";
+//    else filename += "C";
+//    filename += std::to_string(abs(type));
+//    filename += ".csv";
+//    of->open(filename);
+//    
+//    FDN reverb = FDN(type);
+//    reverb.densityResponse(samples, of);
+//    
+//    std::cout << "density saved for type " << type << ".\n";
+//    of->close();
+//}
 
 //x^y for x and y in int
 int powi(int x, int y) {
@@ -105,7 +107,8 @@ int main(int argc, char* argv[])
 {
     float impulseLength = 5.0f;
     
-    std::ofstream impulse;
+    std::ofstream impulseL;
+    std::ofstream impulseR;
     std::ifstream inFile;
     
     //float time = 500.0f; // seconds of reverb
@@ -143,7 +146,7 @@ int main(int argc, char* argv[])
 //        printf("Tyles : %d \n", type);
 ////        saveImpulse(type, FS*impulseLength, &impulse);
 //    }
-    saveImpulse(16, FS*impulseLength, &impulse);
+    saveImpulse(16, FS*impulseLength, &impulseL, &impulseR);
     // save impuses for C types
 //    saveImpulse(-20, FS*impulseLength, &impulse);
     //saveImpulse(-52, FS*impulseLength, &impulse);

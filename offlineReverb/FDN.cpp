@@ -11,664 +11,315 @@
 #include <cstring>
 #include <math.h>
 #include <assert.h>
+#include <random>
+
+#include "ISM.h"
+#include "ISMRoom.h"
+#include "ERImpulseResponse.h"
+
+#include "HRTFFilter.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define ISMORDER 3
 #define DENSITY_WINDOW_SIZE 882 // 20.0 * (44100.0 / 1000.0); (20 ms)
-#define FDN_RT60 0.39f
-#define GAINRT60 FDN_RT60
+//#define FDN_RT60 0.39f
+//#define GAINRT60 FDN_RT60
 #define FDN_SAMPLE_RATE 44100.f
-#define FDN_GAIN_MODEL_ON true
-#define FDN_ER_SECOND_ORDER true
+#define AREFIRSTORDER 64
+
 #define FDN_DFSR_MIN_DLY 1000
 #define FDN_DFSR_MAX_DLY 4000
 #define RADIUSOFHEAD 0.08f
-/************* CHOOSE ONE MODE **************/
+#define DMIN 1.0f
 
-#define DIFFUSER_SAME_AS_ER true          //GOOD RESULT, using RT60 formula and solid angles
-//#define DIFFUSER_SHORT_TAP true           //GOOD RESULT
-//#define DIFFUSER_VELVET true              //NOT GOOD RESULT
-//#define FDN_NO_DIFFUSER true              //GOOD RESULT
-//#define DIFFUSER_GAMMA true               //GOOD RESULT, based on ARE, using gamma + diffuser that is shorter length, and FDN length with room dimension
-//#define FDN_NO_DIFFUSER_WITH_GAMMA true   //NOT GOOD RESULT (THE 'ARE' NEEDS MORE DETAILS ON THE ROOM)
+//todo:
+//do the ISM without diffuser, just pass to FDN straight
+//integrate ARE with the new HRTF method
+
+//***CHOOSE ONE MODE***//
+//#define FDN_ER_SECOND_ORDER true
+#define USE_ISM  //For ISM. Otherwise use ARE for order 2
+
 
 
 
 inline void FDN::setGains(){
-    Room = Cuboid(8.0f, 5.0f, 3.1f);
-    ssLoc = Vector3D(7.0f, 2.65f,1.2f);
-    lLoc = Vector3D(7.0f, 4.0f, 1.2f);
+    this->RT60 = 0.36f;
+    this->roomWidth = 8.0f; //x
+    this->roomHeight = 5.0f; //y
+    this->roomCeiling = 3.1f; //z
+    this->soundSourceLoc = Vector3D(7.0f, 4.f, 1.2f);
+    this->listenerLoc = Vector3D(5.f, 2.55,1.2f);
     
+    
+    Room = Cuboid(roomWidth, roomHeight, roomCeiling);
+
+    ssLoc = soundSourceLoc;
+    lLoc = listenerLoc;
+
     lLocLE = Vector3D(lLoc.x - RADIUSOFHEAD, lLoc.y, lLoc.z);
     lLocRE = Vector3D(lLoc.x + RADIUSOFHEAD, lLoc.y, lLoc.z);
-
-
+    
+    
 #ifdef FDN_ER_SECOND_ORDER
-    Room.segmentCube(4);//FOR SECOND ORDER, change to 9 if want more taps
-    GainValues = Gains(DMIN, Room.elements, Room.area, Room.volume, FDN_RT60, true);
-    printf("SECOND ORDER \n");
-#else
-
-//        Room.sliceCube(ER_NUMTAPS); //AN ALTERNATIVE WAY OF DIVIDING THE ROOM
-        Room.segmentCube(ER_NUMTAPS/6); //FOR FIRST ORDER
-
-    GainValues = Gains(DMIN, Room.elements, Room.area, Room.volume, FDN_RT60, false);
-    printf("FIRST ORDER \n");
-#endif
+    size_t totalARE = AREInit(AREFIRSTORDER);
     
     
-#ifdef DIFFUSER_SAME_AS_ER
-//getting second order delay values
-    float max = negativeInfinity;
-    float min = positiveInfinity;
-    for (int i = 0; i< Room.elements; i++){
-        for (int j = 0; j< Room.elements; j++){
-            if (i!=j && !(Room.segmentedSides[i].normal.normalize().equal(Room.segmentedSides[j].normal.normalize())) ){
-                float distance = Room.segmentedSides[i].getMidpoint().distance(Room.segmentedSides[j].getMidpoint());
-                
-                if (distance < min){
-                    min = distance;
-                }
-                if (distance > max){
-                    max = distance;
-                }
-            }
-        }
-    }
+#elif defined (USE_ISM)
+    totalISM = ISMInit(ISMORDER);
     
-    minDim = min;
-    maxDim = max;
-    
-    printf("DIFFUSER SAME AS ER,\n minDim %f , maxDim %f \n", min , max);
-    diffuserSameAsERLength = true;
-    
-
-#elif FDN_NO_DIFFUSER
-    //getting second order delay values
-    float max = negativeInfinity;
-    float min = positiveInfinity;
-    for (int i = 0; i< Room.elements; i++){
-        for (int j = 0; j< Room.elements; j++){
-            if (i!=j && !(Room.segmentedSides[i].normal.normalize().equal(Room.segmentedSides[j].normal.normalize())) ){
-                float distance = Room.segmentedSides[i].getMidpoint().distance(Room.segmentedSides[j].getMidpoint());
-                
-                if (distance < min){
-                    min = distance;
-                }
-                if (distance > max){
-                    max = distance;
-                }
-            }
-        }
-    }
-    
-    minDim = min;
-    maxDim = max;
-    
-    printf("FDN NO DIFFUSER,\n minDim %f , maxDim %f \n", min , max);
-    diffuserSameAsERLength = false;
-    
-#elif DIFFUSER_GAMMA
-//    //getting second order delay values
-//    float max = negativeInfinity;
-//    float min = positiveInfinity;
-//    for (int i = 0; i< Room.elements; i++){
-//        for (int j = 0; j< Room.elements; j++){
-//            if (i!=j && !(Room.segmentedSides[i].normal.normalize().equal(Room.segmentedSides[j].normal.normalize())) ){
-//                float distance = Room.segmentedSides[i].getMidpoint().distance(Room.segmentedSides[j].getMidpoint());
-//                
-//                if (distance < min){
-//                    min = distance;
-//                }
-//                if (distance > max){
-//                    max = distance;
-//                }
-//            }
-//        }
-//    }
-//    
-//    minDim = min;
-//    maxDim = max;
-//    
-
-//    diffuserSameAsERLength = true;
-    diffuserSameAsERLength = false;
-    minDim = 3.5f;
-    maxDim = 10.9f;
-    printf("DIFFUSER GAMMA USED,\n minDim %f , maxDim %f \n", minDim , maxDim);
-
-    
-    
-#else
-    
-    minDim = 3.1f;
-    maxDim = 8.0f;
-
-
-    printf("SET FDN DELAY AS ROOM DIM \n");
-    diffuserSameAsERLength = false;
     
 #endif
+ 
     
-
-    
-    
-
 }
 
 
+/***********************************
+ *    PRODUCE IMPULSE RESPONSE FN   *
+ ***********************************/
 
-
-
-/*
- * generate randomised delay tap times between minDelay and maxDelay
- * See (http://users.spa.aalto.fi/mak/PUB/AES_Jarvelainen_velvet.pdf)
- *
- * @param minDelay    min delay time in samples
- * @param maxDelay    max delay time in samples
- * @param tapTimes    array where output will be stored
- * @param numTaps     the length of tapTimes and number of times to generate
- */
-void FDN::velvetNoiseTapTimes(float minDelay,
-                         float maxDelay,
-                         size_t* tapTimes,
-                         size_t numTaps){
-    assert(maxDelay > minDelay);
-    
-    float minDelayF = (float)minDelay;
-    float maxDelayF = (float)maxDelay;
-    float numTapsF = (float)numTaps;
-    float range = maxDelayF-minDelayF;
-    float tapSpacing = range / numTapsF;
-    randomSeed = 1145;
-    updateRand();
-    // seed the random number generator for consistent results
-    std::srand(11);
-    
-    for(size_t i=0; i<numTaps; i++){
-        float evenlySpacedTap = minDelay + tapSpacing * ((float)i+0.5);
-        float randomJitter = tapSpacing * (float)std::rand() / (float)RAND_MAX;
-        float randomlySpacedTap = evenlySpacedTap + randomJitter;
-        tapTimes[i] = randomlySpacedTap;
-    }
-}
-
-
-
-
-
-
-
-
-// computes the appropriate feedback gain attenuation
-// to get a decay envelope with the specified RT60 time (in seconds)
-// from a delay line of the specified length.
-//
-// This formula comes from solving EQ 11.33 in DESIGNING AUDIO EFFECT PLUG-INS IN C++ by Will Pirkle
-// which is attributed to Jot, originally.
-double gain(double rt60, double delayLengthInSamples, double sampleRate) {
-    //    printf("Delay length in samples: %f\n", delayLengthInSamples);
-    return pow(10.f, (-3.0 * delayLengthInSamples) / (rt60 * sampleRate));
-}
-
-
-
-
-
-
-
-
-
-
-void FDN::impulseResponse(long numSamples, std::ofstream* outputFile){
-    
-    clock_t begin = clock();
-
-    
-
+void FDN::impulseResponse(long numSamples, std::ofstream* outputFileL, std::ofstream* outputFileR){
     
     
-    float fdnOut, erOut, diffuserOut, directRayOut, nothing, input;
+    float fdnOutL, fdnOutR, input;
+    
+    float erHighestOrder;
+    float directHRTFOut[2];
+    float directRayOut[2];
     float zero = 0.0f;
     float one = 1.0f;
-    
 
-    /*
-     *  Gain model on: ER and diffusion run in parallel, diffusion output to the
-     *  FDN input.
-     */
-    #ifdef FDN_GAIN_MODEL_ON
-    printf("GAIN ON\n");
     
     for (int i = 0; i < numSamples; i++){
+        erHighestOrder = 0.0f;
+        
+        fdnOutL = 0.0f;
+        fdnOutR = 0.0f;
+        
         // set the input to one for the first sample, zero otherwise.
         input = i==0 ? one : zero;
-        
-        // direct rays
-        directRayOut = directRays.process(input * directRayAttenuation);
-        
-        // early reflections
-        BMMultiTapDelay_processMono(&earlyReflector, input, &erOut);
-        
-        #ifdef FDN_NO_DIFFUSER
-            // undo the beta, multiply by energy of from RT60 calculation
-            float erOutUndoBeta = erOut / GainValues.averageBeta * totalRt60Energy;
-        
-            // pass to fdn
-            processAudio(&erOutUndoBeta, &fdnOut, &nothing);
-        
-        #elif FDN_NO_DIFFUSER_WITH_GAMMA
-            // undo the beta, multiply by energy of from RT60 calculation
-            float erOutUndoBeta = erOut / GainValues.averageBeta * GainValues.averageGamma;
-        
-            // pass to fdn
-            processAudio(&erOutUndoBeta, &fdnOut, &nothing);
-        
-        #else
-            // diffusion
-            BMMultiTapDelay_processMono(&diffuser, input, &diffuserOut);
-        
-            // diffusion goes into the fdn
-            processAudio(&diffuserOut, &fdnOut, &nothing);
-        
-        #endif
-        
-        // scale the FDN output to represent collection at the Listener
-        fdnOut *= GainValues.averageUpsilon;
-        
-        // write output
-        *outputFile << erOut+fdnOut+directRayOut << ",";
-    }
-    
-    
-    /*
-     * Gain model off, early reflections go into FDN
-     */
-    #else
-    
-
-    for (int i = 0; i < numSamples; i++){
-
-        // set the input to one for the first sample, zero otherwise.
-        input = i==0 ? one : zero;
-        
-        
-        //Channel processing
-        float fdnTankOutsNew[CHANNELS] = {0};
-        float directRaysOutput[2] = { input *directRayAttenuation, input *directRayAttenuation };
-        processTankOut(fdnTankOutsNew); //convert to 8 channels from outputsBinaural
-        
-        float fdnTankOutLeft[CHANNELS] = {};
-        float fdnTankOutRight[CHANNELS] = {};
-        filterChannels(fdnTankOutsNew, directRaysOutput, fdnTankOutLeft, fdnTankOutRight); //HRTF
-        
-        //get the output of multitappeddelay to outputsBinaural
-//        BMMultiTapDelay_processMultiChannelOut(<#BMMultiTapDelay *This#>, <#float input#>, <#float *output#>)
-        
-        processDirectRays(directRaysOutput, directRaysOutput); //delays the rays
-        vDSP_sve(fdnTankOutLeft, 1, &reverbOut[0], CHANNELS);
-        vDSP_sve(fdnTankOutRight, 1, &reverbOut[1], CHANNELS);
 
         // direct rays
-        directRayOut = directRays.process(input * directRayAttenuation);
+        processDirectRays(input, directRayOut);
+        attenuateDirectRay(directRayOut);
+        HRTFFilterDirect(directRayOut, directHRTFOut);
         
-        // early reflections
-        BMMultiTapDelay_processMono(&earlyReflector, input, &erOut);
+#ifdef  USE_ISM
+
+        //multiply by division constant
+        if (i<ISM_IRLength){
+            erHighestOrder = leftEROutLastOrder[i] * LRDivisionConstant + rightEROutLastOrder[i] * LRDivisionConstant;
+        }
+        else{
+            erHighestOrder = 0.0f;
+        }
         
-//        BMMultiTapDelay_processMono(&diffuser, input, &diffuserOut); //Comment this line, this is for timing
+        //FDN Processing
+        processAudio(&erHighestOrder, &fdnOutL, &fdnOutR);
         
-        // output of ER goes into fdn
-        processAudio(&erOut, &fdnOut, &nothing);
+        if (i<ISM_IRLength){
+            *outputFileL << fdnOutL + leftEROut[i] + directHRTFOut[0]<< ",";
+            *outputFileR << fdnOutR + rightEROut[i] + directHRTFOut[1]<< ",";
+        }
+        else{
+            *outputFileL << fdnOutL  + directHRTFOut[0] << ",";
+            *outputFileR << fdnOutR + directHRTFOut[1] << ",";
+        }
+
+#else
+        //multiply by division constant
+        if (i<ARE_IRLength){
+            erHighestOrder = leftEROutLastOrder[i] * LRDivisionConstant + rightEROutLastOrder[i] * LRDivisionConstant;
+        }
+        else{
+            erHighestOrder = 0.0f;
+        }
         
-        // write output
-        *outputFile << erOut+fdnOut+directRayOut << ",";
+        //FDN Processing
+        processAudio(&erHighestOrder, &fdnOutL, &fdnOutR);
+        
+        if (i<ARE_IRLength){
+            *outputFileL << fdnOutL + leftEROut[i] + directHRTFOut[0]<< ",";
+            *outputFileR << fdnOutR + rightEROut[i] + directHRTFOut[1]<< ",";
+        }
+        else{
+            *outputFileL << fdnOutL  + directHRTFOut[0] << ",";
+            *outputFileR << fdnOutR + directHRTFOut[1] << ",";
+        }
+#endif
+        
     }
+    
     printf("GAIN OFF \n");
-    #endif
+
     
-    clock_t end = clock();
-    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
-    time_elapsed_msecs += elapsed_msecs;
-    printf("Time elapsed: %f ms\n", time_elapsed_msecs);
-    
-    *outputFile << "\n";
+    *outputFileL << "\n";
+    *outputFileR << "\n";
     
 
 }
 
 
 
-//ITD for direct rays
-inline void FDN::processDirectRays(float* input, float* directRaysOutput){
-    directRaysOutput[0] = directRaysStereo[0].process(input[0]);
-    directRaysOutput[1] = directRaysStereo[1].process(input[1]);
-}
-
-//Multiplexer
-inline void FDN::processTankOut(float fdnTankOut[CHANNELS]){
-    for (size_t i = 0; i < numDelays; i++){
-        size_t channel = delayTimesChannel[i];
-        fdnTankOut[channel] += outputsBinaural[i];
-    }
-}
-
-//HRTF
-inline void FDN::filterChannels(float fdnTankOut[8], float directRay[2], float fdnTankOutLeft[8], float fdnTankOutRight[8]){
-    //Filter left & right ear
-    for (size_t i = 0; i < CHANNELS; i++){
-        fdnTankOutLeft[i] = leftEarFilter[i].process(fdnTankOut[i]);
-        fdnTankOutRight[i] = rightEarFilter[i].process(fdnTankOut[i]);
-    }
-    //Filter direct rays
-    directRay[0] = directRayFilter[0].process(directRay[0]);
-    directRay[1] = directRayFilter[1].process(directRay[1]);
-}
 
 
+/***********************************
+ *    CONSTRUCTOR, SETUP VARS   *
+ ***********************************/
 
 FDN::FDN(int rvType)
 {
-    numDelays = abs(rvType);
-//    numDelays = ER_NUMTAPS;
-    setGains();
 
-//    GainValues.calculateGains(Room.segmentedSides, lLoc, ssLoc, numDelays, false); //always set to false, to make upsilon has no loss at all
-    
-    
-    bool gainModelOn = false;
-#ifdef FDN_GAIN_MODEL_ON
-    gainModelOn = true;
-#endif
-    
-    #ifdef FDN_ER_SECOND_ORDER
-    
-        #ifdef DIFFUSER_VELVET
-            printf("DIFFUSER VELVET used, no need to calculate RT60Gains with angle\n");
-    
-        #elif DIFFUSER_GAMMA
-            printf("DIFFUSER GAMMA used, no need to calculate RT60Gains \n");
-    
-    
-        #else
-    printf("Using allgains method here for timing \n");
     
     clock_t begin = clock();
-
     
-    GainValues.calculateAllGainsSecondOrder(RT60GainsForMultiTapDelay, Room.segmentedSides, lLoc, ssLoc, numDelays, diffuserSameAsERLength, GAINRT60, DMIN, gainModelOn);
-//            GainValues.calculateRT60GainsSecondOrder(RT60GainsForMultiTapDelay,
-//                                                 ssLoc,
-//                                                 Room.segmentedSides,
-//                                                 GAINRT60, DMIN, lLoc, diffuserSameAsERLength);
-    
-    clock_t end = clock();
-    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
-    time_elapsed_msecs += elapsed_msecs;
-
-        #endif
-    
-    #else
-        #ifdef DIFFUSER_VELVET
-            printf("DIFFUSER VELVET used, no need to calculate RT60Gains with angle\n");
-        #elif DIFFUSER_GAMMA
-            printf("DIFFUSER GAMMA used, no need to calculate RT60Gains \n");
-        #else
-            GainValues.calculateRT60Gains(RT60GainsForMultiTapDelay,
-                                      ssLoc,
-                                      Room.segmentedSides,
-                                      GAINRT60, DMIN, lLoc, diffuserSameAsERLength);
-        #endif
-    
-    #endif
-    
-
-    totalRt60Energy = 0.0f;
-    for (int i = 0; i<ER_NUMTAPS; i++){
-       //printf("RT gains %d : %0.12f \n", i,  RT60GainsForMultiTapDelay[i] );
-        totalRt60Energy += powf(RT60GainsForMultiTapDelay[i], 2);
-        
-    }
-    totalRt60Energy = sqrtf(totalRt60Energy);
-
-    directRayAttenuation =  expf(-ALPHA * ssLoc.distance(lLoc)) * DMIN/ssLoc.distance(lLoc);
+    setGains();
     
     float delay = ssLoc.distance(lLoc) / 340.f;
     directRays.setTimeSafe(delay);
     
-    #ifdef FDN_ER_SECOND_ORDER
-        Room.getSecondOrderDelayValues(erDelayTapTimes, lLoc, ssLoc, FDN_SAMPLE_RATE); //FOR SECOND ORDER
-    #else
-        Room.getDelayValues(erDelayTapTimes, lLoc, ssLoc, FDN_SAMPLE_RATE, 0);   //FOR FIRST ORDER
-    #endif
-    
 
-    
     
     /***********************************
-     *    setup the early reflector    *
+     *    setup the FDN               *
      ***********************************/
-    // set delay tap gains to unity for early reflections
-    for (int i = 0; i<ER_NUMTAPS; i++)
-        delayTapGains[i] = GainValues.beta[i];
     
-    // initialise the early reflections
-    BMMultiTapDelay_init(&earlyReflector, false, erDelayTapTimes, 0, delayTapGains, 0, ER_NUMTAPS,0);
+    Room.sliceCube(NUMFDNDELAYS);//FOR SECOND ORDER, change to 9 if want more taps
+    GainValues = Gains(DMIN, Room.elements, Room.area, Room.volume, RT60, true);
+    GainValues.calculateUpsilon(Room.segmentedSides, lLoc, NUMFDNDELAYS, Room.area);
+    Room.getDelayValues(delayTimes, lLocLE, lLocRE, ssLoc, FDN_SAMPLE_RATE, 0);
+    
+//    for (int i =0; i<NUMFDNDELAYS; i++){
+//        printf("Upsilon %f \n", GainValues.upsilon[i]);
+//    }
 
-    
-    
-    /****************************
-     *    setup the diffuser    *
-     ****************************/
-    #ifdef DIFFUSER_VELVET
+    float meanFreePath = 4*Room.volume / Room.area;
+//
+//    //Normal Method
+//    //Hardcode the length and channel of FDN based on room dimension according to Wendt et al
+//    std::default_random_engine generator;
+//    std::uniform_real_distribution<float> distribution(-0.1,0.1);
+//    
+//    std::uniform_real_distribution<float> distributionX(-roomWidth/2.f,roomWidth/2.f);
+//    std::uniform_real_distribution<float> distributionY(-roomHeight/2.f,roomHeight/2.f);
+//    
+////    printf("%f %f %f \n", distributionTwo(generator), distributionTwo(generator),distributionTwo(generator));
+//    float averageLength = (Room.xLength + Room.yLength + Room.zLength)/3.0f;
+//    
+//    delayTimes[0] = Room.xLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[0] = determineChannel(Room.floor.getMidpoint().x, Room.floor.getMidpoint().y);
+////    randomPointsOnRectangle(Room.side1.corner, Room.side1.S1, Room.side1.S2, &tempPoints[0], 1);
+//    tempPoints[0] = Vector3D(Room.side1.getMidpoint().x + distributionX(generator), Room.side1.getMidpoint().y, Room.side1.getMidpoint().z);
+//    
+//    delayTimes[1] = Room.xLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[1] = determineChannel(Room.floor.getMidpoint().x, Room.floor.getMidpoint().y);
+//    tempPoints[1] = Vector3D(Room.side3.getMidpoint().x + distributionX(generator), Room.side3.getMidpoint().y, Room.side3.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side3.corner, Room.side3.S1, Room.side3.S2, &tempPoints[1], 1);
+//    
+//    delayTimes[2] = Room.xLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[2] = determineChannel(Room.ceiling.getMidpoint().x, Room.ceiling.getMidpoint().y);
+//    tempPoints[2] = Vector3D(Room.side3.getMidpoint().x + distributionX(generator), Room.side3.getMidpoint().y, Room.side3.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side3.corner, Room.side3.S1, Room.side3.S2, &tempPoints[2], 1);
+//    
+//    delayTimes[3] = Room.xLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[3] = determineChannel(Room.ceiling.getMidpoint().x, Room.ceiling.getMidpoint().y);
+//    tempPoints[3] = Vector3D(Room.side1.getMidpoint().x + distributionX(generator), Room.side1.getMidpoint().y, Room.side1.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side1.corner, Room.side1.S1, Room.side1.S2, &tempPoints[3], 1);
+//    
+//    delayTimes[4] = Room.yLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[4] = determineChannel(Room.side2.getMidpoint().x, Room.side2.getMidpoint().y);
+//    tempPoints[4] = Vector3D(Room.side2.getMidpoint().x , Room.side2.getMidpoint().y + distributionY(generator), Room.side2.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side2.corner, Room.side2.S1, Room.side2.S2, &tempPoints[4], 1);
+//    
+//    delayTimes[5] = Room.yLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[5] = determineChannel(Room.side2.getMidpoint().x, Room.side2.getMidpoint().y);
+//    tempPoints[5] = Vector3D(Room.side2.getMidpoint().x , Room.side2.getMidpoint().y + distributionY(generator), Room.side2.getMidpoint().z);
+//    //    randomPointsOnRectangle(Room.side2.corner, Room.side2.S1, Room.side2.S2, &tempPoints[5], 1);
+//    
+////    FDNChannel[5] = 2;
+//    delayTimes[6] = Room.yLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[6] = determineChannel(Room.side4.getMidpoint().x, Room.side4.getMidpoint().y);
+//    tempPoints[6] = Vector3D(Room.side4.getMidpoint().x , Room.side4.getMidpoint().y + distributionY(generator), Room.side4.getMidpoint().z);
+//    //     randomPointsOnRectangle(Room.side4.corner, Room.side4.S1, Room.side4.S2, &tempPoints[6], 1);
+//    
+////    FDNChannel[6] = 5;
+//    delayTimes[7] = Room.yLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[7] = determineChannel(Room.side4.getMidpoint().x, Room.side4.getMidpoint().y);
+//    tempPoints[7] = Vector3D(Room.side4.getMidpoint().x , Room.side4.getMidpoint().y + distributionY(generator), Room.side4.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side4.corner, Room.side4.S1, Room.side4.S2, &tempPoints[7], 1);
+//    
+////    FDNChannel[7] = 6;
+//    delayTimes[8] = Room.zLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[8] = determineChannel(Room.side1.getMidpoint().x, Room.side1.getMidpoint().y);
+//    tempPoints[8] = Vector3D(Room.side1.getMidpoint().x + distributionX(generator) , Room.side1.getMidpoint().y , Room.side1.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side1.corner, Room.side1.S1, Room.side1.S2, &tempPoints[8], 1);
+//    
+////    FDNChannel[8] = 3;
+//    delayTimes[9] = Room.zLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[9] = determineChannel(Room.side1.getMidpoint().x, Room.side1.getMidpoint().y);
+//    tempPoints[9] = Vector3D(Room.side1.getMidpoint().x + distributionX(generator) , Room.side1.getMidpoint().y , Room.side1.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side1.corner, Room.side1.S1, Room.side1.S2, &tempPoints[9], 1);
+//    
+//    
+////    FDNChannel[9] = 4;
+//    delayTimes[10] = Room.zLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[10] = determineChannel(Room.side3.getMidpoint().x, Room.side3.getMidpoint().y);
+//    tempPoints[10] = Vector3D(Room.side3.getMidpoint().x + distributionX(generator), Room.side3.getMidpoint().y, Room.side3.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side1.corner, Room.side1.S1, Room.side1.S2, &tempPoints[10], 1);
+//    
+//    
+////    FDNChannel[10] = 0;
+//    delayTimes[11] = Room.zLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[11] = determineChannel(Room.side3.getMidpoint().x, Room.side3.getMidpoint().y);
+//    tempPoints[11] = Vector3D(Room.side3.getMidpoint().x + distributionX(generator), Room.side3.getMidpoint().y, Room.side3.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side3.corner, Room.side3.S1, Room.side3.S2, &tempPoints[11], 1);
+//    
+//    
+////    FDNChannel[11] = 7;
+//    delayTimes[12] = Room.yLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[12] = determineChannel(Room.side3.getMidpoint().x, Room.ceiling.getMidpoint().y);
+//    tempPoints[12] = Vector3D(Room.side2.getMidpoint().x , Room.side2.getMidpoint().y + distributionY(generator), Room.side2.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side2.corner, Room.side2.S1, Room.side2.S2, &tempPoints[11], 1);
+//    
+//    delayTimes[13] = Room.yLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[13] = determineChannel(Room.side4.getMidpoint().x, Room.side4.getMidpoint().y);
+//    tempPoints[13] = Vector3D(Room.side4.getMidpoint().x , Room.side4.getMidpoint().y + distributionY(generator), Room.side4.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side4.corner, Room.side4.S1, Room.side4.S2, &tempPoints[13], 1);
+//    
+//    
+//    delayTimes[14] = Room.zLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[14] = determineChannel(Room.side2.getMidpoint().x, Room.side3.getMidpoint().y);
+//    tempPoints[14] = Vector3D(Room.side2.getMidpoint().x , Room.side2.getMidpoint().y + distributionY(generator), Room.side2.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side2.corner, Room.side2.S1, Room.side2.S2, &tempPoints[14], 1);
+//    
+//    delayTimes[15] = Room.zLength/340.f*44100.f + distribution(generator) * averageLength /340.f*44100.f;
+////    FDNChannel[15] = determineChannel(Room.side1.getMidpoint().x, Room.floor.getMidpoint().y);
+//    tempPoints[15] = Vector3D(Room.side4.getMidpoint().x , Room.side4.getMidpoint().y + distributionY(generator), Room.side4.getMidpoint().z);
+////    randomPointsOnRectangle(Room.side4.corner, Room.side4.S1, Room.side4.S2, &tempPoints[15], 1);
+//    
 
-        printf("Set diffuser velvet\n");
-    
-        float minDelay = CGFLOAT_MAX;
-        float maxDelay = 0;
-        float centreOfMass=0.0f;
-        float totalMass = 0.0f;
-        float mass;
-    
-        #ifdef FDN_ER_SECOND_ORDER
-            for (int patchBefore = 0; patchBefore < Room.elements; patchBefore++){
-                for (int patchAfter = 0; patchAfter < Room.elements; patchAfter++){
-                    if (patchAfter != patchBefore && !(Room.segmentedSides[patchBefore].normal.normalize().equal(Room.segmentedSides[patchAfter].normal.normalize()))){
-                        float distance = ssLoc.distance(Room.segmentedSides[patchBefore].getMidpoint()) + Room.segmentedSides[patchBefore].getMidpoint().distance(Room.segmentedSides[patchAfter].getMidpoint());
-                        float timeInSamples = distance / 340.f * FDN_SAMPLE_RATE;
-                        if (timeInSamples < minDelay)
-                            minDelay = timeInSamples;
-                        if (timeInSamples > maxDelay)
-                            maxDelay = timeInSamples;
-                        
-                        // find the centre of mass of the output taps; an average
-                        // weighted by output gain.
-                        mass = 1.0f; // set gamma here to get a weighted average
-                        centreOfMass += timeInSamples*mass;
-                        totalMass += mass;
-                    }
-                }
-            }
-            // find the centre of mass, the weighted average delay time
-            centreOfMass /= totalMass;
-    
-            // set the maxDelay such that the midpoint between min and max is at
-            // the centreOfMass
-            maxDelay = minDelay + 2*(centreOfMass-minDelay);
-    
-    
-    
-        #else
-
-            for (int i = 0; i<ER_NUMTAPS; i++){
-                float time = erDelayTapTimes[i] - (lLoc.distance(Room.segmentedSides[i].getMidpoint()) / 340.f * FDN_SAMPLE_RATE);
-                if (time < minDelay){
-                    minDelay = time;
-                }
-            if (time > maxDelay){
-                maxDelay = time;
-                }
-            }
-        #endif
-    
-        printf("Max length delay in distance is : %f \n", maxDelay * SOUNDSPEED / FDN_SAMPLE_RATE);
-        printf("Min length delay in distance is : %f \n", minDelay * SOUNDSPEED / FDN_SAMPLE_RATE);
-    
-        //set diffuser delay times
-        velvetNoiseTapTimes(minDelay, maxDelay, diffuserTapTimes, DIFFUSER_VELVET_NUMTAPS);
-    
-    
-        // set delay tap gains for the diffuser based on RT60 decay time
-        float* diffuserTapGains = (float*)malloc(sizeof(float)*DIFFUSER_VELVET_NUMTAPS);
-        for(size_t i=0; i<DIFFUSER_VELVET_NUMTAPS; i++){
-            diffuserTapGains[i] = gain(FDN_RT60, diffuserTapTimes[i], FDN_SAMPLE_RATE);
-
-        }
-
-    
-        // normalize the diffuser tap gains to unity * rt60Decay
-        float normalisation = 1.0f / sqrtf((float)DIFFUSER_VELVET_NUMTAPS) * sqrtf(4.f * M_PI * DMIN * DMIN);
-        vDSP_vsmul(diffuserTapGains, 1, &normalisation, diffuserTapGains, 1, DIFFUSER_VELVET_NUMTAPS);
-    
-        float velvetEnergy = 0.0f;
-            for(size_t i=0; i<DIFFUSER_VELVET_NUMTAPS; i++){
-                velvetEnergy += diffuserTapGains[i] * diffuserTapGains[i];
-            }
-    
-        printf("The velvet energy is: %f ", velvetEnergy);
-        BMMultiTapDelay_init(&diffuser, false, diffuserTapTimes, 0, diffuserTapGains, 0, DIFFUSER_VELVET_NUMTAPS, 0);
-    
-        // clear the diffuser tap gains
-        free(diffuserTapGains);
-    
-    
-    #elif DIFFUSER_SAME_AS_ER
-            for (int i = 0; i<DIFFUSER_NUMTAPS;i++){
-                diffuserTapTimes[i] = erDelayTapTimes[i];
-            }
-            printf("Set diffuser same as ER\n");
-    
-            // set delay tap gains for the diffuser based on RT60 decay time
-            float* diffuserTapGains = (float*)malloc(sizeof(float)*DIFFUSER_NUMTAPS);
-            for(size_t i=0; i<DIFFUSER_NUMTAPS; i++){
-                diffuserTapGains[i] = RT60GainsForMultiTapDelay[i];
-            }
-    
-        // normalize the diffuser tap gains to unity * rt60Decay
-        BMMultiTapDelay_init(&diffuser, false, diffuserTapTimes, 0, diffuserTapGains, 0, DIFFUSER_NUMTAPS, 0);
-    
-        // clear the diffuser tap gains
-        free(diffuserTapGains);
-    
-    
-    #elif DIFFUSER_SHORT_TAP
-        printf("SHORT TAP IS ON \n");
-
-        #ifdef FDN_ER_SECOND_ORDER
-            int index = 0;
-            //set as same as first order, dont wory because rt60 gains will be zero for this
-            for (int i = 0; i<NUM_FIRSTORDER; i++){
-                diffuserTapTimes[i] = erDelayTapTimes[i];
-                    index ++;
-            }
-    
-    
-            for (int patchBefore = 0; patchBefore < Room.elements; patchBefore++){
-                    for (int patchAfter = 0; patchAfter < Room.elements; patchAfter++){
-                            if (patchAfter != patchBefore){
-                                float distance = ssLoc.distance(Room.segmentedSides[patchBefore].getMidpoint()) + Room.segmentedSides[patchBefore].getMidpoint().distance(Room.segmentedSides[patchAfter].getMidpoint());
-                                    size_t timeInSamples = distance / (size_t)SOUNDSPEED * FDN_SAMPLE_RATE;
-                                    diffuserTapTimes[index] = timeInSamples;
-                                    index++;
-                            }
-                    }
-            }
-    
-    
-    
-    
-            BMMultiTapDelay_init(&diffuser, false, diffuserTapTimes, 0, RT60GainsForMultiTapDelay, 0, DIFFUSER_NUMTAPS, 0);
-        #else
-    
-            for (int i = 0; i<DIFFUSER_NUMTAPS;i++){
-                    diffuserTapTimes[i] = erDelayTapTimes[i] - Room.segmentedSides[i].getMidpoint().distance(lLoc) / 340.f * 44100.f;
-                    //            printf("initialTap length %d, diffuser length %d RT60gains %d %f beta %f\n", erDelayTapTimes[i], diffuserTapTimes[i], i, RT60GainsForMultiTapDelay[i], GainValues.beta[i]);
-            }
-    
-            BMMultiTapDelay_init(&diffuser, false, diffuserTapTimes, 0, RT60GainsForMultiTapDelay, 0, DIFFUSER_NUMTAPS, 0);
-        #endif
-    
-    
-    #elif FDN_NO_DIFFUSER
-        printf("No diffuser used\n");
-    
-    
-    #elif DIFFUSER_GAMMA
-        printf("Setting up diffuser with gain as gamma\n");
-        #ifdef FDN_ER_SECOND_ORDER
-            int index = 0;
-            //set as same as first order, dont wory because rt60 gains will be zero for this
-            for (int i = 0; i<NUM_FIRSTORDER; i++){
-                diffuserTapTimes[i] = erDelayTapTimes[i];
-                index ++;
-            }
-            
-            
-            for (int patchBefore = 0; patchBefore < Room.elements; patchBefore++){
-                for (int patchAfter = 0; patchAfter < Room.elements; patchAfter++){
-                    if (patchAfter != patchBefore){
-                        float distance = ssLoc.distance(Room.segmentedSides[patchBefore].getMidpoint()) + Room.segmentedSides[patchBefore].getMidpoint().distance(Room.segmentedSides[patchAfter].getMidpoint());
-                        size_t timeInSamples = distance / (size_t)SOUNDSPEED * FDN_SAMPLE_RATE;
-                        diffuserTapTimes[index] = timeInSamples;
-                        index++;
-                    }
-                }
-            }
-        #else
-            for (int i = 0; i<DIFFUSER_NUMTAPS;i++){
-                 diffuserTapTimes[i] = erDelayTapTimes[i] - Room.segmentedSides[i].getMidpoint().distance(lLoc) / 340.f * 44100.f;
-            }
-        #endif
-    
-//        for (int i = 0; i<DIFFUSER_NUMTAPS;i++){
-//            diffuserTapTimes[i] = erDelayTapTimes[i];
-//        }
-    
-        // set delay tap gains for the diffuser based on RT60 decay time
-        float* diffuserTapGains = (float*)malloc(sizeof(float)*DIFFUSER_NUMTAPS);
-        for(size_t i=0; i<DIFFUSER_NUMTAPS; i++){
-            diffuserTapGains[i] = GainValues.gamma[i];
-        }
-    
-        //set the diffuser
-        BMMultiTapDelay_init(&diffuser, false, diffuserTapTimes, 0, diffuserTapGains, 0, DIFFUSER_NUMTAPS, 0);
-    
-        // clear the diffuser tap gains
-        free(diffuserTapGains);
-    
-    #endif
-
-         this->rvType = rvType;
-    if (rvType > 0)
-        // rvType must be a power of 2 larger than 2^4==16 for hadamard mixing
-        assert(isPowerOfTwo(rvType) && rvType >= 16);
-    else
-        // rvType must be a multiple of 4 for sparse block circulant mixing
-        assert(rvType % 4 == 0);
-    
-    // generate randomised delay tap outputs.
-    float minDelayTime = minDim/340.f*44100.f;
-    float maxDelayTime = maxDim/340.f*44100.f;
-
-    velvetNoiseTapTimes(minDelayTime, maxDelayTime, delayTimes, numDelays);
-    
     // count total delay time
     totalDelayTime = 0;
-    for (size_t i = 0; i < numDelays; i++){
+    for (size_t i = 0; i < NUMFDNDELAYS; i++){
         totalDelayTime += delayTimes[i];
         std::cout << delayTimes[i] << ", ";
     }
-
+    
+    //assert its larger than MFP
+    assert(totalDelayTime/NUMFDNDELAYS > meanFreePath/340.f * 44100);
+    printf("\n Mean free path in Hz %f, average delay length in Hz %f, ratio %f \n", meanFreePath/340.f * 44100, (float)totalDelayTime/(float)NUMFDNDELAYS,(float)totalDelayTime/(float)NUMFDNDELAYS/(meanFreePath/340.f * 44100) );
 
     
+    //Add reverb ITD
+    setTempPoints(); //commented for normal method, uncommented for channel method
+    calculateAdditionalDelays();
+    setupHRTFFunctions();
+    
     // randomly shuffle the order of delay times in the array
-    randomPermutation1Channel(delayTimes, numDelays, 1);
+    randomPermutation1Channel(delayTimes, NUMFDNDELAYS, 1);
     
     // declare and initialise the delay buffers
     delayBuffers = new float[totalDelayTime];
@@ -677,49 +328,99 @@ FDN::FDN(int rvType)
     // calculate start and end indices for each delay line
     startIndices[0] = 0;
     endIndices[0] = delayTimes[0];
-    for (int i = 1; i < numDelays; i++){
+    for (int i = 1; i < NUMFDNDELAYS; i++){
         startIndices[i] = startIndices[i - 1] + delayTimes[i - 1];
         endIndices[i] = startIndices[i] + delayTimes[i];
     }
     
     // since we copy one input channel into many delay lines, we need to attenuate the input to avoid clipping.
-    fdnMultiplexInputAttenuation = 1.0f / sqrt((float)numDelays);
-    
-    wetPct = .2;
-    dryPct = sqrt(1.0- (wetPct*wetPct));
+    fdnMultiplexInputAttenuation = 1.0f / sqrt((float)NUMFDNDELAYS);
     
     // we specify our feedback matrix with elements of 1, and -1.  In order to keep it unitary,
     // we need to scale it down.
     // here we calculate the dividend needed to scale the feedback matrix in order to keep it unitary.
 
     if (rvType > 0) // fast hadamard transform
-        matrixAttenuation = 1.0f / sqrt(numDelays);
+        matrixAttenuation = 1.0f / sqrt(NUMFDNDELAYS);
     else  // 4x4 circular network
         matrixAttenuation = 1.0f / sqrt(4.0f);
-    
-    un_matrixAttenuation = 1.0 / matrixAttenuation;
-    
+
     // randomise output tap signs
-    for (int i = 0; i < numDelays; i++){
+    for (int i = 0; i < NUMFDNDELAYS; i++){
         tapSigns[i] = pow(-1.0, i * 31 % 71);
         //printf("tapsigns %d %f \n", i, tapSigns[i]);
     }
     
-    hadamardTransform(tapSigns, temp3, numDelays);
-    memcpy(tapSigns, temp3, sizeof(float) * numDelays);
+    hadamardTransform(tapSigns, temp3, NUMFDNDELAYS);
+    memcpy(tapSigns, temp3, sizeof(float) * NUMFDNDELAYS);
     
-    resetDelay();
+    resetDelay(); //setting jot's gain
+    
+    clock_t end = clock();
+    double elapsed_msecs = double(end - begin) / CLOCKS_PER_SEC * 1000.f;
+    printf("\n Setup Time is : %f ms \n", elapsed_msecs);
 
 }
 
 
+/***********************************
+ *   PROCESS FDN FUNCTION        *
+ ***********************************/
+
+void FDN::processAudio(float* pInput, float* pOutputL, float* pOutputR)
+{
+    
+    // Read the Input
+    *pOutputL = 0;
+    *pOutputR = 0;
+    
+    float FDNTankOut[CHANNELS] = {};
+    float FDNTankOutL[CHANNELS] = {};
+    float FDNTankOutR[CHANNELS] = {};
+    
+    int i;
+    float xn = *pInput * fdnMultiplexInputAttenuation;
+    
+    
+    // mono output copied to both channels
+    for (i = 0; i < NUMFDNDELAYS; i++) {
+        // copy delay line signals to output buffer and attenuate
+        outputs[i] = delayBuffers[rwIndices[i]] * tapGains[i];
+    }
+    
+    vDSP_vmul(outputs, 1, GainValues.upsilon, 1, temp4, 1, NUMFDNDELAYS);
+    processTankOutFDN(FDNTankOut, temp4);
+    processHRTFFDN(FDNTankOut, FDNTankOutL, FDNTankOutR);
+    
+    //ITD
+    addReverbDelay(FDNTankOutL, FDNTankOutR); //Temp point delays
+    
+    vDSP_sve(FDNTankOutL, 1, pOutputL, CHANNELS);
+    vDSP_sve(FDNTankOutR, 1, pOutputR, CHANNELS);
+    
+    // Filling up temp3 with copies of the input sample
+    vDSP_vfill(&xn, temp3, 1, NUMFDNDELAYS);
+    // Randomizing the sign of the input sample vector
+    vDSP_vmul(temp3, 1, tapSigns, 1, temp3, 1, NUMFDNDELAYS);
+    // Mixing the input sample vector with the feedback vector
+    vDSP_vadd(temp3, 1, outputs, 1, outputs, 1, NUMFDNDELAYS);
+    
+    // Matrix mixing operation
+    hadamardTransform(outputs, temp3, NUMFDNDELAYS);
+    
+    // Write into the delay line inputs
+    for (int i = 0; i < NUMFDNDELAYS; i++) delayBuffers[rwIndices[i]] = temp3[i];
+    
+    
+    incrementIndices();
+    
+    
+}
 
 
-
-
-
-
-
+/***********************************
+ *    FDN HELPER FUNCTIONS       *
+ ***********************************/
 inline void FDN::hadamard16(float* input, float* output){
     // level 1
     // +
@@ -816,10 +517,6 @@ inline void FDN::hadamard16(float* input, float* output){
 }
 
 
-
-
-
-
 // input and output must not be the same array
 inline void FDN::hadamardTransform(float* input, float* output, size_t length){
     size_t partitionSize = length;
@@ -858,12 +555,8 @@ inline void FDN::hadamardTransform(float* input, float* output, size_t length){
 }
 
 
-
-
-
-
 void FDN::resetReadIndices(){
-    for (size_t i = 0; i < numDelays; i++){
+    for (size_t i = 0; i < NUMFDNDELAYS; i++){
         rwIndices[i] = startIndices[i];
     }
 }
@@ -875,31 +568,39 @@ void FDN::resetReadIndices(){
 
 
 
-
-
-// larger values decay more slowly
-void FDN::setDecayTime(double rt60){
-    if (rt60 < 0) {
-        for (int i = 0; i < numDelays; i++){
-            tapGains[i] = 1.0f;
-        }
-    }
-    else if (rt60 == 0) {
-        for (int i = 0; i < numDelays; i++){
-            tapGains[i] = 0.0f;
-        }
-    }
-    else {
-        for (int i = 0; i < numDelays; i++) {
-            tapGains[i] = gain(rt60, delayTimes[i],FDN_SAMPLE_RATE);
-//            printf("TapGains: %f delayTime %d \n", tapGains[i], delayTimes[i]);
-        }
-    }
+// computes the appropriate feedback gain attenuation
+// to get a decay envelope with the specified RT60 time (in seconds)
+// from a delay line of the specified length.
+//
+// This formula comes from solving EQ 11.33 in DESIGNING AUDIO EFFECT PLUG-INS IN C++ by Will Pirkle
+// which is attributed to Jot, originally.
+double gain(double rt60, double delayLengthInSamples, double sampleRate) {
+    //    printf("Delay length in samples: %f\n", delayLengthInSamples);
+    return pow(10.f, (-3.0 * delayLengthInSamples) / (rt60 * sampleRate));
 }
 
 
 
 
+// larger values decay more slowly
+void FDN::setDecayTime(double rt60){
+    if (rt60 < 0) {
+        for (int i = 0; i < NUMFDNDELAYS; i++){
+            tapGains[i] = 1.0f;
+        }
+    }
+    else if (rt60 == 0) {
+        for (int i = 0; i < NUMFDNDELAYS; i++){
+            tapGains[i] = 0.0f;
+        }
+    }
+    else {
+        for (int i = 0; i < NUMFDNDELAYS; i++) {
+            tapGains[i] = gain(rt60, delayTimes[i],FDN_SAMPLE_RATE);
+//            printf("TapGains: %f delayTime %zu \n", tapGains[i], delayTimes[i]);
+        }
+    }
+}
 
 
 void FDN::resetDelay()
@@ -911,17 +612,13 @@ void FDN::resetDelay()
     // init read indices
     resetReadIndices();
     
-    setDecayTime(FDN_RT60);
-    std::srand(0);
+    setDecayTime(RT60);
+//    std::srand(0);
 }
 
 
-
-
-
-
 inline void FDN::incrementIndices(){
-    for (int i = 0; i < numDelays; i++){
+    for (int i = 0; i < NUMFDNDELAYS; i++){
         rwIndices[i]++;
         if (rwIndices[i] >= endIndices[i])
             rwIndices[i] = startIndices[i];
@@ -929,105 +626,11 @@ inline void FDN::incrementIndices(){
 }
 
 
-
-
-
-
-void FDN::testProcess(long numSamples){
-    float in, left, right;
-    in = left = right = 0.0f;
-    for (long i = 0; i < numSamples; i++){
-        processAudio(&in, &left, &right);
-    }
-}
-
-
-
-
-
-
-
-
-void FDN::processAudio(float* pInput, float* pOutputL, float* pOutputR)
-{
-
-    // Read the Input
-    *pOutputL = 0;
-    *pOutputR = 0;
-    int i;
-    float xn = *pInput * fdnMultiplexInputAttenuation;
-    
-    
-    // mono output copied to both channels
-    for (i = 0; i < numDelays; i++) {
-        // copy delay line signals to output buffer and attenuate
-        outputs[i] = delayBuffers[rwIndices[i]] * tapGains[i];
-    }
-
-    
-    // process the feedback matrix
-    if (rvType > 0) {
-        
-        for (i =0; i<numDelays; i++)
-        {
-            *pOutputL += outputs[i] ;
-        }
-        
-        // Filling up temp3 with copies of the input sample
-        vDSP_vfill(&xn, temp3, 1, numDelays);
-        // Randomizing the sign of the input sample vector
-        vDSP_vmul(temp3, 1, tapSigns, 1, temp3, 1, numDelays);
-        // Mixing the input sample vector with the feedback vector
-        vDSP_vadd(temp3, 1, outputs, 1, outputs, 1, numDelays);
-        
-        // Matrix mixing operation
-        hadamardTransform(outputs, temp3, numDelays);
-        
-        // Write into the delay line inputs
-        for (int i = 0; i < numDelays; i++) delayBuffers[rwIndices[i]] = temp3[i];
-        
-    }
-    else {
-        for (int i = 0; i < numDelays; i += 4){
-            ppxx_xn = outputs[i] + outputs[i + 1] + xn;
-            xxpp = outputs[i + 2] + outputs[i + 3];
-            pnxx_xn = outputs[i] - outputs[i + 1] + xn;
-            xxpn = outputs[i + 2] - outputs[i + 3];
-            if (i + 7 < numDelays){
-                delayBuffers[rwIndices[(i + 4)]] = ppxx_xn + xxpp; //++++
-                delayBuffers[rwIndices[(i + 5)]] = ppxx_xn - xxpp; //++--
-                delayBuffers[rwIndices[(i + 6)]] = pnxx_xn + xxpn; //+-+-
-                delayBuffers[rwIndices[(i + 7)]] = pnxx_xn - xxpn; //+--+
-            }
-        }
-        delayBuffers[rwIndices[0]] = ppxx_xn + xxpp; //++++
-        delayBuffers[rwIndices[1]] = ppxx_xn - xxpp; //++--
-        delayBuffers[rwIndices[2]] = pnxx_xn + xxpn; //+-+-
-        delayBuffers[rwIndices[3]] = pnxx_xn - xxpn; //+--+
-    }
-    
-    incrementIndices();
-
-
-}
-
-
-
-
-
-
-
 void swap(size_t* a, size_t b, size_t c){
     size_t tmp = a[b];
     a[b] = a[c];
     a[c] = tmp;
 }
-
-
-
-
-
-
 
 // randomly permute the elements of a without swapping any delay times between channels
 void FDN::randomPermutation(size_t* a, size_t length, size_t audioChannels){
@@ -1038,61 +641,12 @@ void FDN::randomPermutation(size_t* a, size_t length, size_t audioChannels){
     }
 }
 
-
-
-
-
-
 void FDN::randomPermutation1Channel(size_t* a, size_t length, size_t audioChannels){
     int j = 0;
     for (int i = j; i < length; i += audioChannels){
         updateRand();
-        swap(a, i, j + (rand % (length / audioChannels))*audioChannels);
+        swap(a, i, j + (rands % (length / audioChannels))*audioChannels);
     }
-}
-
-
-
-
-
-
-void FDN::fileResponse(long numSamples, std::ifstream* inputFile, std::ofstream* outputFile){
-    float left, right;
-    float zero = 0.0f;
-    uint32_t samplesRead = 0;
-    
-    // process reverb on the file input
-    wav_hdr wavHeader;
-    int headerSize = sizeof(wav_hdr);
-    
-    //Read the header
-    inputFile->read((char*)&wavHeader,headerSize);
-    samplesRead += (headerSize / 2);
-    
-    //Read and process the audio data in the file
-    byteTo16 sampleb;
-    float samplef;
-    while (inputFile->read((char*)&sampleb.bytes,2))
-    {
-        samplesRead++;
-        
-        // convert from int16 to float
-        samplef = (float)sampleb.sixteenBit / (float)INT16_MAX;
-
-        // process reverb on the sample
-        processAudio(&samplef, &left, &right);
-        *outputFile << left << "," << right << "\n";
-    }
-    
-    // process the reverb tail, input is zero
-    for (long i = samplesRead; i < numSamples; i++){
-        processAudio(&zero, &left, &right);
-
-        
-        *outputFile << left << "," << right << "\n";
-    }
-    
-    *outputFile << "\n";
 }
 
 float max(float* window, int length){
@@ -1111,91 +665,90 @@ int thresholdCount(float* window, int length, float threshold){
     return count;
 }
 
-void FDN::densityResponse(long numSamples, std::ofstream* outputFile){
-    float left, right;
-    float zero = 0.0f;
-    float one = 1.0f;
-    
-    float window[DENSITY_WINDOW_SIZE];
-    
-    // insert the impulse
-    processAudio(&one, &left, &right);
-    
-    // process the reverb tail
-    for (int i = 0; i < numSamples; i += DENSITY_WINDOW_SIZE){
-        for (int j = 0; j < DENSITY_WINDOW_SIZE; j++){
-            processAudio(&zero, window + j, &right);
-        }
-        float threshold = max(window, DENSITY_WINDOW_SIZE) / 100.0;
-        float echoDensity = (float)thresholdCount(window, DENSITY_WINDOW_SIZE, threshold) / ((float)DENSITY_WINDOW_SIZE / 44100.0);
-        *outputFile << echoDensity << ",";
-    }
-    *outputFile << 0.0;
-}
-
 //
 //// see: http://software.intel.com/en-us/articles/fast-random-number-generator-on-the-intel-pentiumr-4-processor/
 //// rather than returning an output, this function updates a class variable so that we only have to generate 1 random number for each sample.
 inline void FDN::updateRand()
 {
     randomSeed = (214013 * randomSeed + 2531011);
-    rand = (randomSeed >> 16) & 0x7FFF;
+    rands = (randomSeed >> 16) & 0x7FFF;
 }
 
 
-//Helper functions
-float FDN::channeltoangleNormal(size_t channel){
-    float channelWidth = 360.0f / (float)CHANNELS;
-    return (float)channel * channelWidth + (channelWidth / 2.0f);
+/***********************************
+ *    PROCESS AUDIO FUNCTIONS       *
+ ***********************************/
+//ITD for direct rays
+inline void FDN::processDirectRays(float input, float* directRaysOutput){
+    directRaysOutput[0] = directRaysStereo[0].process(input);
+    directRaysOutput[1] = directRaysStereo[1].process(input);
 }
 
-float FDN::channelToAngle(size_t channel){
-    float channelWidth = 360.0f / (float)CHANNELS;
-    size_t midChannel = CHANNELS / 2 - 1;
-    // return (float)channel * channelWidth + (channelWidth / 2.0f);
-    if (channel <= midChannel){
-        return (float)channel * channelWidth + (channelWidth / 2.0f);
+//Multiplexer FDN
+void FDN::processTankOutFDN(float FDNTankOut[CHANNELS], float* inputFDN){
+    for (size_t i = 0; i < NUMFDNDELAYS; i++){
+        size_t channel = delayTimesChannel[i];
+        FDNTankOut[channel] += inputFDN[i];
     }
-    else{
-        return (-1.f  * (float) (CHANNELS - channel) * channelWidth )+ (channelWidth / 2.0f);
-    }
 }
 
-size_t FDN::angleToChannel(float angleInDegrees){
-    
-    float channelWidth = 360.0f / CHANNELS;
-    
-    //Channel 0 to 7 from 12 o'clock, clockwise according from DFX
-    return (size_t)floorf(angleInDegrees / channelWidth);
-}
-
-//azimuth is clockwise 0 to 360 degree, p. 149 DAFX
-size_t FDN::determineChannel(float x,float y){
-    float xL = lLoc.x;
-    float yL = lLoc.y;
-    
-    float xDistance = x - xL;
-    float yDistance = y - yL;
-    
-    float angle2 = atan2f(xDistance, yDistance) * 180.0f / M_PI;
-    if (angle2 < 0.0f ){
-        angle2 += 360.0f;
-    }
-    return angleToChannel(angle2);
-    
-}
-
-void FDN::setHRTFFilters(){
-    //Right is negative, p.151 DAFX
+//HRTF ER
+inline    void FDN::processHRTFER(float ERTankOutL[CHANNELS], float ERTankOutR[CHANNELS], float* inputER){
     for (size_t i = 0; i < CHANNELS; i++){
-        leftEarFilter[i].setAngle(-channelToAngle(i), FDN_SAMPLE_RATE, false);
-        rightEarFilter[i].setAngle(channelToAngle(i), FDN_SAMPLE_RATE, true);
+        ERTankOutL[i] = leftEarFilterER[i].process(inputER[i]);
+        ERTankOutR[i] = rightEarFilterER[i].process(inputER[i]);
     }
-    
-    directRayFilter[0].setAngle(-directRayAngles[0], FDN_SAMPLE_RATE,false);
-    directRayFilter[1].setAngle(directRayAngles[1], FDN_SAMPLE_RATE, true);
+}
+
+//HRTF FDN
+inline void FDN::processHRTFFDN(float* input,  float* fdnTankOutLeft, float* fdnTankOutRight){
+    //Filter left & right ear
+    for (size_t i = 0; i < CHANNELS; i++){
+        fdnTankOutLeft[i] = leftEarFilter[i].process(input[i]);
+        fdnTankOutRight[i] = rightEarFilter[i].process(input[i]);
+    }
+}
+
+//HRTF Direct
+inline void FDN::HRTFFilterDirect(float directRay[2], float directRayAfterHRTF[2]){
+    //Filter direct rays
+    directRayAfterHRTF[0] = directRayHRTFFilter[0].process(directRay[0]);
+    directRayAfterHRTF[1] = directRayHRTFFilter[1].process(directRay[1]);
     
 }
+
+//Direct Ray Attenuation
+void FDN::attenuateDirectRay(float* input){
+    input[0] *= directRayAttenuation[0];
+    input[1] *= directRayAttenuation[1];
+}
+
+
+/***********************************
+ *    setup the HRTF FUNCTIONS    *
+ ***********************************/
+
+void FDN::setupHRTFFunctions(){
+    
+    setFDNDelayOutputChannels();
+
+    //Direct Rays
+    setDirectDelayTimes();
+    setDirectGains();
+    setDirectRayAngles();
+    setDirectSingleTapDelay();
+    
+    //HRTF filters
+    setHRTFFilters();
+}
+
+
+
+
+
+/***********************************
+ *    DIRECT RAYS SETUP FUNCTIONS    *
+ ***********************************/
 
 void FDN::setDirectSingleTapDelay(){
     directRaysStereo[0].setTimeSafe(directDelayTimes[0]);
@@ -1209,19 +762,557 @@ inline void FDN::setDirectDelayTimes()
     //Calculate delay from source to receiver
     float directDelayLeft = ssLoc.distance(lLocLE) / SOUNDSPEED;
     float directDelayRight = ssLoc.distance(lLocRE) / SOUNDSPEED;
+    printf("direct delay left %f , direct delay right %f \n", directDelayLeft, directDelayRight);
     directDelayTimes[0] = directDelayLeft;
-    
     directDelayTimes[1] = directDelayRight;
 }
 
-void FDN::setDelayChannels(){
+void FDN::setDirectGains(){
+    directRayAttenuation[0] = expf(-ALPHA * ssLoc.distance(lLocLE)) * DMIN/ssLoc.distance(lLocLE);
+    directRayAttenuation[1] = expf(-ALPHA * ssLoc.distance(lLocRE)) * DMIN/ssLoc.distance(lLocRE);
+    printf("Direct left %f direct right %f \n", directRayAttenuation[0], directRayAttenuation[1]);
+}
+
+//Setting direct ray angle with respect to listener location
+void FDN::setDirectRayAngles()
+{
+    float yDiff, xDiff;
+    yDiff = ssLoc.y - lLocLE.y;
+    xDiff = ssLoc.x - lLocLE.x;
+    float angle = atan2(xDiff, yDiff) * 180.0f / M_PI;
     
-    for (size_t i = 0; i < ER_NUMTAPS; i++){
-        delayTimesChannel[i] = determineChannel(Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y);
+    //switch to 360.f
+    
+    //Make it between 0 to 360
+    if (fabs(angle - 0.0f)<0.0001){
+        angle = 0.0f;
     }
-    delayTimes[ER_NUMTAPS] = 0;
+    
+    if (angle < 0.0f ){
+        angle = 360.f + angle;
+    }
+    
+    directRayAngles[0] = angle;
+    
+    float yDiff2, xDiff2;
+    yDiff2 = ssLoc.y - lLocRE.y;
+    xDiff2 = ssLoc.x - lLocRE.x;
+    float angle2 = atan2(xDiff2, yDiff2) * 180.0f / M_PI;
+    
+    //switch to 360.f
+    
+    //Make it between 0 to 360
+    if (fabs(angle2 - 0.0f)<0.0001){
+        angle2 = 0.0f;
+    }
+    
+    if (angle2 < 0.0f ){
+        angle2 = 360.f + angle2;
+    }
+    
+    directRayAngles[1] = angle2;
+}
+
+
+
+/***********************************
+ *    HRTF SETUP FUNCTIONS    *
+ ***********************************/
+
+
+//Returns angle between 0 to 360
+float FDN::channeltoangleNormal(size_t channel){
+    float channelWidth = 360.0f / (float)NUMFDNDELAYS;
+    //    size_t midChannel = CHANNELS / 2 - 1;
+    return (float)channel * channelWidth + (channelWidth / 2.0f);
+    //    if (channel <= midChannel){f
+    //        return (float)channel * channelWidth + (channelWidth / 2.0f);
+    //    }
+    //    else{
+    //        return (-1.f  * (float) (CHANNELS - channel) * channelWidth )+ (channelWidth / 2.0f);
+    //    }
+}
+
+
+size_t FDN::angleToChannel(float angleInDegrees){
+    
+    //Make it between 0 to 360
+    if (fabs(angleInDegrees - 0.0f)<0.0001){
+        angleInDegrees = 0.0f;
+    }
+    
+    if (angleInDegrees < 0.0f ){
+        angleInDegrees = 360.f + angleInDegrees;
+    }
+    float channelWidth = 360.0f / CHANNELS;
+    
+    //Channel 0 to 7 from 12 o'clock, clockwise according from DFX
+    size_t channel =(size_t)floorf(angleInDegrees / channelWidth);
+    //    printf("From angle: %f to channel %zu \n", angleInDegrees, channel);
+    return channel;
+}
+
+
+float FDN::determineAngle(float x,float y){
+    float xL = lLoc.x;
+    float yL = lLoc.y;
+    
+    float xDistance = x - xL;
+    float yDistance = y - yL;
+    
+    //Special cases
+    if (fabs(yDistance - 0.00001) < 0.0f){
+        // zero y, can be at 90 or -90
+        if (xDistance >= 0){
+            return angleToChannel(90.f);
+        }
+        else{
+            return angleToChannel(-90.f);
+        }
+    }
+    
+    if (fabs(xDistance - 0.00001) < 0.0f){
+        //zero x, can be at 0 or 180;
+        if (yDistance >= 0){
+            return angleToChannel(0.f);
+        }
+        else{
+            return angleToChannel(180.f);
+        }
+    }
+    
+    //Normal case
+    //x over y because we want azimuth
+    float angleInDegrees = atan2f(xDistance, yDistance) * 180.0f / M_PI;
+    
+    //Make it between 0 to 360
+    if (fabs(angleInDegrees - 0.0f)<0.0001){
+        angleInDegrees = 0.0f;
+    }
+    
+    if (angleInDegrees < 0.0f ){
+        angleInDegrees = 360.f + angleInDegrees;
+    }
+    
+    //printf("Angle %f \n", angle2);
+    return angleInDegrees;
+    
+}
+
+void FDN::setHRTFFilters(){
+    
+    for (int i =0; i<CHANNELS; i++){
+        leftEarFilter[i].setAngle(convertAzimuthToLeftEar(determineAngle(tempPoints[i].x, tempPoints[i].y)), FDN_SAMPLE_RATE, false);
+        rightEarFilter[i].setAngle(convertAzimuthToRightEar(determineAngle(tempPoints[i].x, tempPoints[i].y)), FDN_SAMPLE_RATE, false);
+    }
+    
+    directRayHRTFFilter[0].setAngle(convertAzimuthToLeftEar(directRayAngles[0]), FDN_SAMPLE_RATE,false);
+    directRayHRTFFilter[1].setAngle(convertAzimuthToRightEar(directRayAngles[1]), FDN_SAMPLE_RATE, true);
+    
+}
+
+//setting the channels for each FDN output
+void FDN::setFDNDelayOutputChannels(){
+    for(size_t i = 0; i<NUMFDNDELAYS; i++){
+        printf("room x %f room y %f Lx %f Ly %f \n", Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y, lLoc.x, lLoc.y);
+        delayTimesChannel[i] = determineChannel(Room.segmentedSides[i].getMidpoint().x, Room.segmentedSides[i].getMidpoint().y,0);
+        printf("i %zu Channels %zu \n", i, delayTimesChannel[i]);
+    }
+}
+
+
+
+
+float FDN::convertAzimuthToLeftEar(float azimuth){
+
+    //change azimuth to be between 0 to 180 and 0 to -180
+    if (azimuth >= 360.f){
+        azimuth -= 360.f;
+    }
+    
+    if (azimuth > 180.f){
+        azimuth = azimuth - 360.f;
+    }
+    
+    if(azimuth > 90.f and azimuth <= 180.f){
+        float leftEarAngle = azimuth + 90.f - 360.f;
+        return leftEarAngle;
+    }
+    
+    return azimuth + 90.f;
+    
+    
+}
+
+float FDN::convertAzimuthToRightEar(float azimuth){
+    
+    //    //azimuth between 0 to 360
+    //    float azimuth = channeltoangleNormal(channel);
+    //
+    //change azimuth to be between 0 to 180 and 0 to -180
+    if (azimuth >= 360.f){
+        azimuth -= 360.f;
+    }
+    
+    
+    if (azimuth > 180.f){
+        azimuth = azimuth - 360.f;
+    }
+    
+    if(azimuth >= -180.f and azimuth < -90.f){
+        float rightEarAngle = azimuth - 90.f + 360.f;
+        return rightEarAngle;
+    }
+    
+    return azimuth - 90.f;
+    
+}
+
+
+
+
+/***********************************
+ *    PROCESS ARE FUNCTION          *
+ ***********************************/
+size_t FDN::AREInit(size_t numberOfFirstOrder){
+    
+    
+    // find the longest reflection time
+    float longestReflectionTime = 0.0f;
+    // total number of ARE sources
+    size_t numTotalSources = numberOfFirstOrder*numberOfFirstOrder;
+    printf("Num totalSources : %zu \n", numTotalSources);
+    
+    float* leftEarGains = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
+    float* rightEarGains = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
+    float* leftEarDelayTimes = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
+    float* rightEarDelayTimes = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
+    
+    Vector3D* ARESources = static_cast<Vector3D*>(malloc(sizeof(Vector3D)*numTotalSources));
+    
+    RoomARE = Cuboid(roomWidth, roomHeight, roomCeiling);
+    RoomARE.sliceCube((int)numberOfFirstOrder);
+
+    GainValuesARE = Gains(DMIN, RoomARE.elements, RoomARE.area, RoomARE.volume, RT60, true);
+    
+    //this comes up with Beta
+    GainValuesARE.calculateAllGainsSecondOrder(temp3, RoomARE.segmentedSides, lLocLE, ssLoc, RT60, DMIN, numberOfFirstOrder, leftEarGains, ARESources);
+    GainValuesARE.calculateAllGainsSecondOrder(temp3, RoomARE.segmentedSides, lLocRE, ssLoc, RT60, DMIN, numberOfFirstOrder, rightEarGains, ARESources);
+    
+    //get the second order Delay times
+    RoomARE.getSecondOrderDelayValues(leftEarDelayTimes, lLocLE, ssLoc, FDN_SAMPLE_RATE);
+    RoomARE.getSecondOrderDelayValues(rightEarDelayTimes, lLocRE, ssLoc, FDN_SAMPLE_RATE);
+
+    
+    for(size_t i=0; i<numTotalSources; i++){
+//        printf("reflection time L %f reflection time R %f \n", leftEarDelayTimes[i], rightEarDelayTimes[i]);
+        if(leftEarDelayTimes[i] > longestReflectionTime)
+            longestReflectionTime = leftEarDelayTimes[i];
+        if(rightEarDelayTimes[i] > longestReflectionTime)
+            longestReflectionTime = rightEarDelayTimes[i];
+    }
+    
+    
+    
+    // allocate memory for producing the impulse response
+    float sampleRate = 44100;
+    ARE_IRLength = 1+(longestReflectionTime*sampleRate)+HRTF_IR_LENGTH;
+    printf("Longest reflection time :%zu\n", ARE_IRLength);
+    
+    
+    leftEROut  = static_cast<float*>(malloc(sizeof(float)*ARE_IRLength));
+    rightEROut = static_cast<float*>(malloc(sizeof(float)*ARE_IRLength));
+    leftEROutLastOrder = static_cast<float*>(malloc(sizeof(float)*ARE_IRLength));
+    rightEROutLastOrder = static_cast<float*>(malloc(sizeof(float)*ARE_IRLength));
+    
+    float* anglesLeft = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
+    float* anglesRight = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
+    
+//    ISMVector3D sourcePosition   = (ISMVector3D){ssLoc.x, ssLoc.y, ssLoc.z};
+    ISMVector3D listenerLeftEar  = (ISMVector3D){lLoc.x - RADIUSOFHEAD,lLoc.y,lLoc.z};
+    ISMVector3D listenerRightEar = (ISMVector3D){lLoc.x + RADIUSOFHEAD,lLoc.y,lLoc.z};
+
+    for (size_t i = 0; i<numTotalSources; i++){
+        anglesLeft[i]  = convertAzimuthToLeftEar(angleAzimuth(listenerLeftEar.x, listenerLeftEar.y,ARESources[i].x, ARESources[i].y));
+        anglesRight[i] = convertAzimuthToRightEar(angleAzimuth(listenerRightEar.x, listenerRightEar.y,ARESources[i].x, ARESources[i].y));
+//        printf("Room wall loc %f %f, listener left ear %f %f Angle left %f listener right ear %f %f angle right %f \n",ARESources[i].x, ARESources[i].y, lLocLE.x, lLocLE.y, anglesLeft[i], lLocRE.x, lLocRE.y, anglesRight[i]);
+    }
+
+
+    
+      AREImpulseResponse(leftEarDelayTimes, rightEarDelayTimes,
+                            leftEarGains, rightEarGains,
+                            anglesLeft, anglesRight,
+                            leftEROut, rightEROut,
+                            leftEROutLastOrder, rightEROutLastOrder,
+                            numTotalSources, ARE_IRLength,
+                            numberOfFirstOrder,
+                            FDN_SAMPLE_RATE);
+    
+    
+    
+    
+    return numTotalSources;
+    
+}
+
+
+
+/***********************************
+ *    PROCESS ISM FUNCTION          *
+ ***********************************/
+size_t FDN::ISMInit(size_t reflectionMaxOrder){
+    
+
+    size_t* reflectionOrders;
+    imageSources = static_cast<ISMVector3D*>(malloc(sizeof(ISMImageSource)*ISM_totalSourcesForOrder(reflectionMaxOrder)));
+    reflectionTimesL = static_cast<float*>(malloc(sizeof(float)*ISM_totalSourcesForOrder(reflectionMaxOrder)));
+    reflectionTimesR = static_cast<float*>(malloc(sizeof(float)*ISM_totalSourcesForOrder(reflectionMaxOrder)));
+    reflectionGainsL = static_cast<float*>(malloc(sizeof(float)*ISM_totalSourcesForOrder(reflectionMaxOrder)));
+    reflectionGainsR = static_cast<float*>(malloc(sizeof(float)*ISM_totalSourcesForOrder(reflectionMaxOrder)));
+    reflectionOrders = static_cast<unsigned long*>( malloc(sizeof(ISMImageSource)*ISM_totalSourcesForOrder(reflectionMaxOrder)));
+    
+
+    // set up inputs for the simulation
+    float length = roomHeight;
+    float height = roomCeiling;
+    float width  = roomWidth;
+    float absorptionCoefficient =  sqrtf(1.f-0.1611f * Room.volume / (RT60 * Room.area));
+    printf("Abs coeff in pressure %f \n", absorptionCoefficient*absorptionCoefficient);
+    float speedOfSound = SOUNDSPEED;
+    float micDistance = DMIN; // this is d_M
+    ISMVector3D sourcePosition   = (ISMVector3D){ssLoc.x, ssLoc.y, ssLoc.z};
+    ISMVector3D listenerLeftEar  = (ISMVector3D){lLoc.x - RADIUSOFHEAD,lLoc.y,lLoc.z};
+    ISMVector3D listenerRightEar = (ISMVector3D){lLoc.x + RADIUSOFHEAD,lLoc.y,lLoc.z};
+    
+    
+    // do the simulation
+    ISM_simulateRoom(length, height, width,
+                     absorptionCoefficient,
+                     speedOfSound,
+                     micDistance,
+                     reflectionMaxOrder,
+                     sourcePosition,
+                     listenerLeftEar,
+                     listenerRightEar,
+                     imageSources,           // (output) source positions
+                     reflectionTimesL,        // (output)
+                     reflectionTimesR,
+                     reflectionGainsL,        // (output)
+                     reflectionGainsR,
+                     reflectionOrders);      // (output) order of each I.S.
+    
+//    printf("Reflection Gains {");
+//    for(size_t i=0; i<ISM_totalSourcesForOrder(reflectionMaxOrder); i++)
+//        printf("%f, ",reflectionGainsL[i]);
+//    printf("}\n\n");
+//    
+//    printf("Reflection Times {");
+//    for(size_t i=0; i<ISM_totalSourcesForOrder(reflectionMaxOrder); i++)
+//        printf("%f, ",reflectionTimesL[i]);
+//    printf("}\n\n");
+//    
+    
+    
+    // find the longest reflection time
+    float longestReflectionTime = 0.0f;
+    size_t numSources = ISM_totalSourcesForOrder(reflectionMaxOrder);
+    for(size_t i=0; i<numSources; i++){
+
+        if(reflectionTimesL[i] > longestReflectionTime)
+            longestReflectionTime = reflectionTimesL[i];
+        if(reflectionTimesR[i] > longestReflectionTime)
+            longestReflectionTime = reflectionTimesR[i];
+    }
+    
+    
+    
+    // allocate memory for producing the impulse response
+    float sampleRate = 44100;
+    ISM_IRLength = 1+(longestReflectionTime*sampleRate)+HRTF_IR_LENGTH;
+    leftEROut  = static_cast<float*>(malloc(sizeof(float)*ISM_IRLength));
+    rightEROut = static_cast<float*>(malloc(sizeof(float)*ISM_IRLength));
+    leftEROutLastOrder = static_cast<float*>(malloc(sizeof(float)*ISM_IRLength));
+    rightEROutLastOrder = static_cast<float*>(malloc(sizeof(float)*ISM_IRLength));
+    float* anglesLeft = static_cast<float*>(malloc(sizeof(float)*numSources));
+    float* anglesRight = static_cast<float*>(malloc(sizeof(float)*numSources));
+    
+    
+    for(size_t i=0; i<numSources; i++){
+        //        anglesLeft[i]  = convertAzimuthToLeftEar(angleAzimuth(listenerLeftEar.x, listenerLeftEar.y, imageSources[i].x, imageSources[i].y));
+        //        anglesRight[i] = convertAzimuthToRightEar(angleAzimuth(listenerLeftEar.x, listenerLeftEar.y, imageSources[i].x, imageSources[i].y));
+        //
+        anglesLeft[i]  = convertAzimuthToLeftEar(angleAzimuth(listenerLeftEar.x, listenerLeftEar.y, imageSources[i].x, imageSources[i].y));
+        anglesRight[i] = convertAzimuthToRightEar(angleAzimuth(listenerRightEar.x, listenerRightEar.y, imageSources[i].x, imageSources[i].y));
+
+        
+        
+    }
+    
+    
+    ERImpulseResponse(reflectionMaxOrder, reflectionTimesL, reflectionTimesR,
+                      reflectionGainsL, reflectionGainsR,
+                      anglesLeft, anglesRight,
+                      leftEROut, rightEROut,
+                      leftEROutLastOrder, rightEROutLastOrder,
+                      numSources, ISM_IRLength,
+                      sampleRate);
+
+    
+    return ISM_totalSourcesForOrder(reflectionMaxOrder);
     
     
     
     
 }
+
+
+///************************************************////
+///*********Reverb ITD Functions******************////
+///************************************************////
+//ITD for reverb
+inline void FDN::addReverbDelay(float* fdnLeft, float*fdnRight){
+    for (int  i = 0; i<CHANNELS; i++){
+        if (earStatus[i] == 0){
+            continue;
+        }
+        else if (earStatus[i] == 1){
+            //add delay to left ear
+            fdnLeft[i] = reverbDelays[i].process(fdnLeft[i]);
+        }
+        else if (earStatus[i]==2){
+            //add delay to right ear
+            fdnRight[i] = reverbDelays[i].process(fdnRight[i]);
+        }
+    }
+}
+
+
+void FDN::calculateAdditionalDelays(){
+    
+    for (int i = 0; i<CHANNELS; i++){
+        tempPoints[i].z = lLoc.z; //set to be leveled
+        printf("{%f, %f, %f},", tempPoints[i].x, tempPoints[i].y, tempPoints[i].z);
+    }
+    
+    printf("\n Setting Additional Delays\n");
+    for (int i = 0; i<CHANNELS; i++){
+        tempPoints[i].z = lLoc.z; //set to be leveled
+        
+        float distanceToLeftEar = tempPoints[i].distance(lLocLE);
+        float distanceToRightEar = tempPoints[i].distance(lLocRE);
+//        printf("Temp point %f %f %f, distToLeftEar %f distToRightEar %f \n", tempPoints[i].x, tempPoints[i].y, tempPoints[i].z, distanceToLeftEar, distanceToRightEar);
+        
+       if (fabs(distanceToLeftEar-distanceToRightEar)/340.f * 44100.f< 1.0f){
+            earStatus[i] = 0; //means same, no added delay
+        }
+        else if (distanceToRightEar > distanceToLeftEar){
+            printf("i : %d add delay to right ear for %f samples \n", i, fabs((distanceToRightEar-distanceToLeftEar) / SOUNDSPEED*44100.f));
+            earStatus[i] = 2;
+            additionalDelays[i] = (distanceToRightEar-distanceToLeftEar) / SOUNDSPEED;
+            reverbDelays[i].setTimeSafe(additionalDelays[i]);
+//            reverbDelays[i].setTimeSafe((float)(i+1)*0.02);
+        }
+        else if (distanceToRightEar < distanceToLeftEar){
+            printf("i : %d add delay to left earfor %f samples \n", i, fabs((distanceToRightEar-distanceToLeftEar) / SOUNDSPEED*44100.f));
+            earStatus[i] = 1;
+            additionalDelays[i] = (distanceToLeftEar-distanceToRightEar) / SOUNDSPEED;
+            reverbDelays[i].setTimeSafe(additionalDelays[i]);
+//            reverbDelays[i].setTimeSafe((float)(i+1)*0.02);
+        }
+    }
+}
+
+void FDN::setTempPoints(){
+
+////    If FDN delay length same as proposed method
+//    for (int i = 0; i<CHANNELS; i++){
+//        tempPoints[i] = Room.segmentedSides[i].getMidpoint();
+//    }
+
+    //channel points
+    float yBot = 0.0f-lLoc.y;
+    float yTop = roomHeight - lLoc.y;
+    float xLeft = 0.0f - lLoc.x;
+    float xRight = roomWidth - lLoc.x;
+    
+    float w = lLoc.x;
+    float h = lLoc.y;
+    
+    for (int i = 0; i < CHANNELS/2; i++){
+        float angle = channeltoangleNormal(i) ;
+        //        printf("Angle %f \n", angle);
+        float m = 1.0f/tan(angle * M_PI / 180.f);
+        //y = mx + 0
+        Vector3D pointArray[4] = {Vector3D(yBot/m, yBot),
+            Vector3D(yTop/m, yTop),
+            Vector3D(xLeft, m*xLeft),
+            Vector3D(xRight, m*xRight)};
+        
+        for (int j = 0; j< 4; j++){
+            float xO = pointArray[j].x + lLoc.x;
+            if (xO > roomWidth or xO < 0.0f){
+                pointArray[j].mark = false;
+                continue;
+            }
+            float yO = pointArray[j].y + lLoc.y;
+            if (yO > roomHeight or yO < 0.0f){
+                pointArray[j].mark = false;
+                continue;
+            }
+            if (pointArray[j].mark == true){
+                //check for x value
+                if (pointArray[j].x >= 0){
+                    tempPoints[i].x = pointArray[j].x + w;
+                    tempPoints[i].y = pointArray[j].y + h;
+                }
+                else{
+                    tempPoints[i+CHANNELS/2].x = pointArray[j].x + w;
+                    tempPoints[i+CHANNELS/2].y = pointArray[j].y + h;
+                }
+            }
+        }
+    }
+}
+
+
+//azimuth is clockwise 0 to 180 degree right, 0 to -180 left, p. 149 DAFX
+size_t FDN::determineChannel(float x,float y, float orientation){
+    float xL = lLoc.x;
+    float yL = lLoc.y;
+    
+    float xDistance = x - xL;
+    float yDistance = y - yL;
+    
+    //Special cases
+    if (fabs(yDistance - 0.00001) < 0.0f){
+        // zero y, can be at 90 or -90
+        if (xDistance >= 0){
+            return angleToChannel(90.f);
+        }
+        else{
+            return angleToChannel(-90.f);
+        }
+    }
+    
+    if (fabs(xDistance - 0.00001) < 0.0f){
+        //zero x, can be at 0 or 180;
+        if (yDistance >= 0){
+            return angleToChannel(0.f);
+        }
+        else{
+            return angleToChannel(180.f);
+        }
+    }
+    
+    //Normal case
+    //x over y because we want azimuth
+    float angle2 = atan2f(xDistance, yDistance) * 180.0f / M_PI;
+    
+    //printf("Angle %f \n", angle2);
+    
+    return angleToChannel(angle2);
+    
+}
+
+

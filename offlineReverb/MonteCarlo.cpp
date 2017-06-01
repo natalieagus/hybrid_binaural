@@ -22,8 +22,8 @@
 
 Vector3D crossProduct(Vector3D a, Vector3D b){
     Vector3D out = Vector3D(a.y*b.z - a.z*b.y,
-                   a.z*b.x - a.x*b.z,
-                   a.x*b.y - a.y*b.x);
+                            a.z*b.x - a.x*b.z,
+                            a.x*b.y - a.y*b.x);
     return out;
     
 }
@@ -90,7 +90,7 @@ Vector3D orthogonalTo(Vector3D a, Vector3D b){
     // remove the projection of b from b
     return subtractV3(b,bProjA);
 }
-                     
+
 
 
 // returns true if a and b are colinear
@@ -165,9 +165,9 @@ Vector3D addV3(Vector3D a, Vector3D b){
 
 
 void randomPointsOnTriangle(Vector3D c, Vector3D s1, Vector3D s2, Vector3D* points, size_t numPoints){
-    srand(100);
+//    srand(100);
     // s1 and s2 should not be co-linear
-//    printf("S1 %f %f %f S2  %f %f %f \n", s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
+    //    printf("S1 %f %f %f S2  %f %f %f \n", s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
     assert(!colinearQ(s1,s2));
     
     // get a unit vector that is orthogonal to s1, but in the same plane as s1 and s2
@@ -205,11 +205,11 @@ void randomPointsOnRectangle(Vector3D c, Vector3D s1, Vector3D s2, Vector3D* poi
     size_t t1Points = floor(numPoints/2);
     size_t t2Points = numPoints - t1Points;
     
-  //  printf("%f %f %f , %f %f %f,  %f %f %f \n", c.x, c.y, c.z, s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
+    //  printf("%f %f %f , %f %f %f,  %f %f %f \n", c.x, c.y, c.z, s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
     // do the first triangle
     randomPointsOnTriangle(c, s1, s2, points, t1Points);
-
-   // printf("triangle1  done");
+    
+    // printf("triangle1  done");
     // where is the opposite corner of the rectangle?
     Vector3D c2 = Vector3D(c.x+s1.x+s2.x, c.y+s1.y+s2.y, c.z+s1.z+s2.z);
     
@@ -220,7 +220,7 @@ void randomPointsOnRectangle(Vector3D c, Vector3D s1, Vector3D s2, Vector3D* poi
     // do the second triangle
     randomPointsOnTriangle(c2,s3,s4, points + t1Points, t2Points);
     
-   // printf("triangle2  done");
+    // printf("triangle2  done");
 }
 
 

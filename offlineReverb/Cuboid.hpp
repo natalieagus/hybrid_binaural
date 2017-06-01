@@ -75,10 +75,10 @@ typedef struct Cuboid{
     void sliceCube(int slices);
     float segmentCubeOnce();
     
-    void getDelayValues(size_t* delayValues, Vector3D L, Vector3D S, int Hz, int startIndex);
+    void getDelayValues(size_t* delayValues, Vector3D leftEar, Vector3D rightEar, Vector3D S, int Hz, int startIndex);
 
     void segmentCubeBasedOnProjectedArea(int numDelays, Vector3D S, Vector3D L);
-    void getSecondOrderDelayValues(size_t *delayValues, Vector3D L, Vector3D S, int Hz);
+    void getSecondOrderDelayValues(float *delayValues, Vector3D L, Vector3D S, int Hz);
     float projectedAreaOfAPlane(Vector3D S, Vector3D L, Plane3D patch);
     
     int dividePlane(Plane3D divide, int index, int sourceIndex, Vector3D L, Vector3D S);

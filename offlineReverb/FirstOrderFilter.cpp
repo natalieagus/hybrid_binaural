@@ -28,15 +28,7 @@ float FirstOrderFilter::process(float sample){
 //a0 is always 1
 //right then -100
 void FirstOrderFilter::setAngle(float theta, float fc, bool right){
-//    // set a1, b0, b1
-//   // float initTheta = theta;
-    
-    
-   //  if ((theta >= 0.f and theta <= 170.f) or (theta <= 0.f and theta >= -170.f))
-    //  if (theta >= -150.f and theta <= 150.f)
-        theta = -theta + 80.f;
-    
-   // theta = theta - 90.0f;
+
     float theta0 = 150.0f ;
     float alfa_min = 0.1f ;
     float c = 334.0f; // speed of sound

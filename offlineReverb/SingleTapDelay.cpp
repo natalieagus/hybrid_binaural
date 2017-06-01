@@ -25,7 +25,7 @@ SingleTapDelay::SingleTapDelay(){
 float SingleTapDelay::process(float input){
     
     if (zeroDelay){
-       // printf("zero delay!");
+        printf("zero delay!");
         return input;
     }
     
@@ -35,6 +35,7 @@ float SingleTapDelay::process(float input){
     float audioOutput;
     
     // copy from delay line to temp buffer
+//    printf("rwindex? %zu ", rwIdx); 
     audioOutput = delayLineBuffer[rwIdx];
     
     // write input into to the delayLine
@@ -87,19 +88,23 @@ void SingleTapDelay::processBuffer(float *input, float *output, size_t numFrames
 
 // safely request a delay time update at the next available opportunity
 void SingleTapDelay::setTimeSafe(float seconds){
- //  printf("seconds: %f \n", seconds);
+//    printf("seconds: %f \n", seconds);
     this->time = seconds;
+    
     if (seconds < 0.0f){
         seconds = 0.0f;
     }
  //   printf("seconds: %f \n", seconds);
-    if (fabs(0.0f - seconds) < 0.0000001f){
-       // printf("Zero delay is true \n");
-        zeroDelay = true;
-    }
-    nextEndMarker = seconds*SAMPLE_RATE_F;
+//    if (fabs(0.0f - seconds) < 0.000001){
+//        printf("Zero delay is true \n");
+//        zeroDelay = true;
+//    }
+    
+    nextEndMarker = ceilf( seconds*SAMPLE_RATE_F);
+    
+
     lengthInSamples = nextEndMarker;
-    ///printf("MAX DELAY LINE: %d \n", MAX_DELAY_LINE);
+//    printf("MAX DELAY LINE: %d nextEndMarker %zu \n", MAX_DELAY_LINE, nextEndMarker);
    //printf("*********\n");
     assert(nextEndMarker <= MAX_DELAY_LINE);
     needsUpdate = true;

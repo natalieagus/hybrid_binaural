@@ -12,6 +12,9 @@
 #ifndef __offlineReverb__FDN__
 #define __offlineReverb__FDN__
 
+#include "ISM.h"
+#include "ISMRoom.h"
+
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -24,10 +27,11 @@
 #endif /* defined(__offlineReverb__FDN__) */
 
 
-#define NUMDELAYS 16
+//#define NUMDELAYS 16
 #define NUMDELAYSEXT 1024
 #define AUDIOCHANNELS 1
-#define CHANNELS 8
+#define CHANNELS 12
+#define NUMFDNDELAYS 64
 
 
 class FDN
@@ -36,104 +40,126 @@ public:
     // constructor
     FDN();
     FDN(int type);
+    
     void setDecayTime(double rt60);
-    ~FDN();
+ 
     
-protected:
+protected:    
+    
+    //****ARE-RELATED****//
+    size_t ARE_IRLength;
+    size_t AREInit(size_t numberOfFirstOrder);
+
+
+
+
+    
+    //****ISM-RELATED****//
+    ISMVector3D* imageSources;
+    size_t totalISM;
+    float* reflectionTimesL;
+    float* reflectionTimesR;
+    float* reflectionGainsL;
+    float* reflectionGainsR;
+    float* reflectionGains;
+    size_t ISMInit(size_t reflectionMaxOrder);
+    size_t ISM_IRLength;
+
+    
+    //****CHANNEL-RELATED****//
+    size_t determineChannel(float x,float y, float orientation);
+    size_t delayTimesChannel[NUMFDNDELAYS];//[ER_NUMTAPS];
+    void setERDelayOutputChannels();
+    void setFDNDelayOutputChannels();
+    float determineAngle(float x, float y);
+    size_t angleToChannel(float angleInDegrees);
+    float channeltoangleNormal(size_t channel);
+    float convertAzimuthToLeftEar(float azimuth);
+    float convertAzimuthToRightEar(float azimuth);
     
     
-    float outputsBinaural[TOTALDELAYS];
+    //****ITD-RELATED****//
+    int earStatus[CHANNELS];
+    void setTempPoints();
+    Vector3D tempPoints[CHANNELS];
+    void calculateAdditionalDelays();
+    float additionalDelays[CHANNELS];
+    SingleTapDelay reverbDelays[CHANNELS];
+    void addReverbDelay(float* fdnLeft, float*fdnRight);
     
-    size_t delayTimesChannel[ER_NUMTAPS];
     
-    Vector3D lLocLE = Vector3D();
-    Vector3D lLocRE = Vector3D();
-    void processTankOut(float fdnTankOut[CHANNELS]);
+    //****HRTF-RELATED****//
+    void setupHRTFFunctions();
+    void processHRTFER(float ERTankOutL[CHANNELS], float ERTankOutR[CHANNELS], float* outputER);
+    FirstOrderFilter leftEarFilter[CHANNELS];
+    FirstOrderFilter rightEarFilter[CHANNELS];
+    FirstOrderFilter leftEarFilterER[CHANNELS];
+    FirstOrderFilter rightEarFilterER[CHANNELS];
+    FirstOrderFilter directRayHRTFFilter[2];
+    void setHRTFFilters();
+    void processHRTFFDN(float* input, float* fdnTankOutLeft, float* fdnTankOutRight);
     
-    //To handle direct Rays
+    //****MULTIPLEXER-RELATED****//
+    void processTankOutER(float ERTankOut[CHANNELS], float* inputER);
+    void processTankOutFDN(float FDNTankOut[CHANNELS], float* inputFDN);
+    
+    
+    
+    //****DIRECT-RAYS*****//
+    SingleTapDelay directRays;
+    float directRayAngles[2];
     SingleTapDelay directRaysStereo[2];
     void setDirectSingleTapDelay();
     void setDirectGains();
     void setDirectDelayTimes();
-    void processDirectRays(float* input, float* directRaysOutput);
+    void processDirectRays(float input, float* directRaysOutput);
     float directDelayTimes[2]; //unit = FREQ * seconds
-    void processDirectRays(float* input, float* directRaysOutput);
-    
-    //Binaural filters
-    FirstOrderFilter leftEarFilter[CHANNELS];
-    FirstOrderFilter rightEarFilter[CHANNELS];
-    FirstOrderFilter directRayFilter[2];
-    void setHRTFFilters();
-    //Direct ray is inclusive in one of the channels, so there's no need to have another channel angle for this
-    float directRayAngles[2];
-    //process the fdntankout[channels]
-    void filterChannels(float fdnTankOut[CHANNELS], float directRay[2], float fdnTankOutLeft[CHANNELS], float fdnTankOutRight[CHANNELS]);
-
-    //To do channel angle calculations
-    void setDelayChannels();
+    void HRTFFilterDirect(float* directRay, float* directRayAfterHRTF);
+    void attenuateDirectRay(float* input);
     void setDirectRayAngles();
-    size_t determineChannel(float x, float y);
-    size_t angleToChannel(float angleInDegrees);
-    float channelToAngle(size_t channel);
-    float channeltoangleNormal(size_t channel);
-    
-
-    void  setMultiTapDelayChannels();
-    size_t multiDelayLinePointsChannel[ER_NUMTAPS];
-    
-    double time_elapsed_msecs = 0.0f;
-    bool diffuserSameAsERLength;
-    
-    int firstState = 0;
-    
-    float directRayAttenuation;
-    
-    SingleTapDelay directRays;
-    BMMultiTapDelay earlyReflector;
-    size_t erDelayTapTimes[ER_NUMTAPS];
-    float delayTapGains[ER_NUMTAPS];
-
-    float multiTapOutputs[ER_NUMTAPS];
+    float directRayAttenuation[2];
 
 
-    float totalRt60Energy;
 
-    BMMultiTapDelay diffuser;
-    size_t diffuserTapTimes[DIFFUSER_NUMTAPS];
     
+    //****ROOM PARAMETERS****//
+    float orientation;
+    Vector3D lLocLE = Vector3D();
+    Vector3D lLocRE = Vector3D();
     Vector3D ssLoc;
     Vector3D lLoc;
+    
+    float RT60;
+    float roomWidth;
+    float roomHeight;
+    float roomCeiling;
+    Vector3D listenerLoc;
+    Vector3D soundSourceLoc;
+    
     Cuboid Room;
+    Cuboid RoomARE;
     Gains GainValues;
+    Gains GainValuesARE;
     void setGains();
-    
-//    float inputGains[MULTITAPDELAYS];
-//    float outputGains[MULTITAPDELAYS];
-    
-    float minDim;
-    float maxDim;
-    
-    float gamma = 1.0f;
-    float upsilon = 1.0f;
-    
-    void processAudioNoGain(float* pInput, float* pOutputL, float* pOutputR);
-    
-//    float* inputAttenuationArray;
-//    float* outputAttenuationArray;
-//
-    
-    float RT60GainsForMultiTapDelay[DIFFUSER_NUMTAPS];
-    
+    double time_elapsed_msecs = 0.0f;
     float fdnMultiplexInputAttenuation;
-//    float outputAttenuation;
     float matrixAttenuation;
-    float wetPct,dryPct;
-    float un_matrixAttenuation;
+
+    
+    //****FDN PROCESSING PARAMS****//
+    
+    float LRDivisionConstant =  1.f / sqrtf(2.f);
+    float* leftEROut;
+    float* rightEROut;
+    float* leftEROutLastOrder;
+    float* rightEROutLastOrder;
+    
     float tapGains[NUMDELAYSEXT];
     float tapSigns[NUMDELAYSEXT];
     float temp1[NUMDELAYSEXT];
     float temp2[NUMDELAYSEXT];
     float temp3[NUMDELAYSEXT];
+    float temp4[NUMDELAYSEXT];
     float inputTemp[NUMDELAYSEXT];
     float temp16[16];
     float ppxx_xn, xxpp, pnxx_xn, xxpn;
@@ -167,13 +193,12 @@ protected:
                              size_t numTaps);
     
     void updateRand();
-    int rvType, numDelays;
-    int rand, randomSeed;
+    int rands, randomSeed;
+    
 public:
     void resetDelay();
     void processAudio(float* pInput, float* pOutputL, float* pOutputR);
-    void testProcess(long numSamples);
-    void impulseResponse(long numSamples, std::ofstream* outputFile);
+    void impulseResponse(long numSamples, std::ofstream* outputFileL, std::ofstream* outputFileR);
     void densityResponse(long numSamples, std::ofstream* outputFile);
     void fileResponse(long numSamples, std::ifstream* inputFile, std::ofstream* outputFile);
 };

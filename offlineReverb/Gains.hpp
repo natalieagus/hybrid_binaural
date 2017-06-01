@@ -21,12 +21,12 @@
 
 //#define DIFFUSER_NUMTAPS 576//6*4*4 //128 //6*4*4//576 //CHANGE THIS TO 36 FOR SECOND ORDER
 //#define FDN_NUMDELAYS DIFFUSER_NUMTAPS
-#define ER_NUMTAPS 576//36//2916 //576
-#define DIFFUSER_NUMTAPS ER_NUMTAPS
+//#define ER_NUMTAPS 36//2916 //576
+//#define DIFFUSER_NUMTAPS ER_NUMTAPS
 //#define DELAYSFDN 20
 #define NUM_MONTECARLO 50
-#define DMIN 0.8f
-#define NUM_FIRSTORDER 24//6//54 //24
+
+//#define NUM_FIRSTORDER 6//54 //24
 #define DIFFUSER_VELVET_NUMTAPS ER_NUMTAPS
 
 
@@ -61,56 +61,31 @@ typedef struct Gains{
         printf("Abs coeff : %f \n", absorptionCoefficient);
     };
     
-    void calculateAllGainsSecondOrder(float*gains,Plane3D* surfaces, Vector3D L, Vector3D S, int numFDNdelays, bool useERLength,float rt60, float dmin, bool gainOn);
     
-    void calculateRT60GainsSecondOrder(float* gains, Vector3D S, Plane3D* surfaces, float rt60, float dmin, Vector3D L, bool useERLength);
-        
-    void calculateRT60Gains(float* gains, Vector3D S, Plane3D* surfaces, float rt60, float dmin, Vector3D L, bool useERLength);
-    //methods
-    float calculateGains(Plane3D* surfaces, Vector3D L, Vector3D S, int numFDNdelays, bool useERLength);
-
-    float checkEnergy();
-    void monteCarloGammaFirstOrder(Vector3D* points, Vector3D S, Vector3D N, float surfaceArea);
-    void monteCarloSecondOrder(Plane3D *surfaces, Vector3D L, Vector3D S, bool useERLength);
-
-    void monteCarloBeta(Vector3D* points, Vector3D L, Vector3D S, Vector3D N, int numPoints, float* beta, float area);
-    float calculateBeta(Vector3D x, Vector3D L, Vector3D S, Vector3D N, float visibilitySX, float visibilityXL);
-
-//    float getDBRDF();
+    ////****METHODS****////
+    void calculateUpsilon(Plane3D* surfaces, Vector3D L, int segments, float surfaceArea);
+    void calculateAllGainsSecondOrder(float*gains, Plane3D* surfaces, Vector3D L, Vector3D S,float rt60, float dminimum, size_t numberOfFirstOrder, float* gainCoefficients, Vector3D* ARESources);
+    float calculateBetaFirstOrder(Plane3D* surfaces, Vector3D L, Vector3D S);
+    void monteCarloBeta(Vector3D* points, Vector3D L, Vector3D S, Vector3D N, int numPoints, float* beta, float area, float dminimum);
     float pointCollectionFunction(Vector3D x, Vector3D L, Vector3D N, float visibility, float absorption);
     float reflectionKernel(Vector3D x, Vector3D L, Vector3D S, Vector3D N, float visibility);
     Vector3D Lambda(Vector3D u, Vector3D x);
 
 
+    ////****VARIABLES****//
     bool secondOrder;
-    
     float absorptionCoefficient;
-    
-    //variables
     float dmin;
     float totalSurfaceArea;
     int numberDelays;
-    
     float* upsilon;
-//    float* mu;
     float* beta;
-//    float* betaSecondOrder;
     float* gamma;
-    
     float rt60;
     float totalVolume;
-    
 
-    double averageUpsilon;
-    double averageGamma;
-    double averageBeta;
-    double energyInputToLate;
-    double totalGain;
-    
     float totalInputEnergy;
     float correctInputEnergy;
-//    
-//    energyTerm brdfPhong;
     
     
 }Gains;

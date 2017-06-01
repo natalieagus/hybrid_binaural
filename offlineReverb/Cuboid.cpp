@@ -76,10 +76,29 @@ void Cuboid::segmentCube(int tilesPerSide){
 
 
 void Cuboid::sliceCube(int slices){
-    segmentCube(4*4);
+    int toSlice = 0;
     
-    int cubicTiles = 6*4*4;
+    while(true){
+        printf("toSlice %d, slices %d \n", toSlice, slices);
+        if (6*toSlice * toSlice < slices){
+            toSlice += 1;
+        }
+        if (6*toSlice * toSlice > slices){
+            toSlice -= 1;
+            break;
+        }
+        if (6*toSlice * toSlice == slices){
+            break;
+        }
+        
+    }
+    
+    printf("toSlice %d \n", toSlice);
+    segmentCube(toSlice*toSlice);
+    
+    int cubicTiles = 6*toSlice*toSlice;
     Plane3D* newSegmentedSides = new Plane3D[slices];
+    
     //copy into newSegmentedSides
     for (int i = 0; i<cubicTiles; i++){
         newSegmentedSides[i] = Plane3D(segmentedSides[i].corner, segmentedSides[i].S1, segmentedSides[i].S2);
@@ -89,18 +108,18 @@ void Cuboid::sliceCube(int slices){
     int remainder = slices - cubicTiles;
     int index = cubicTiles;
     
-    srand(11);
+//    srand(11);
     int randNum = rand()%(cubicTiles-1);
     //divide some plane into two
     for (int i = 0; i<remainder; i++){
         Plane3D refPlane = segmentedSides[randNum];
         //divide into two along S1
         if (randNum %2 == 0){
-        Vector3D newCorner = refPlane.corner.add(refPlane.S1.scalarMult(0.5f));
-        Vector3D newS1 = refPlane.S1.scalarMult(0.5f);
-        newSegmentedSides[randNum] = Plane3D(refPlane.corner, newS1, refPlane.S2);
-        newSegmentedSides[index] = Plane3D(newCorner, newS1, refPlane.S2);
-        index++;
+            Vector3D newCorner = refPlane.corner.add(refPlane.S1.scalarMult(0.5f));
+            Vector3D newS1 = refPlane.S1.scalarMult(0.5f);
+            newSegmentedSides[randNum] = Plane3D(refPlane.corner, newS1, refPlane.S2);
+            newSegmentedSides[index] = Plane3D(newCorner, newS1, refPlane.S2);
+            index++;
             randNum = rand()%(cubicTiles-1);
         }
         else{
@@ -113,6 +132,7 @@ void Cuboid::sliceCube(int slices){
         }
     }
     
+    segmentedSides = new Plane3D[slices];
     //copy back into segmentedsides
     for (int i = 0; i<elements; i++){
         segmentedSides[i] = Plane3D(newSegmentedSides[i].corner, newSegmentedSides[i].S1, newSegmentedSides[i].S2);
@@ -120,13 +140,13 @@ void Cuboid::sliceCube(int slices){
     
     free(newSegmentedSides);
     
-    
-        for (int i = 0; i<(slices); i++){
-            printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
-        }
-
+//    ////
+//        for (int i = 0; i<(slices); i++){
+//            printf("{{%f, %f, %f}, {%f, %f, %f}, {%f, %f, %f}},", segmentedSides[i].corner.x, segmentedSides[i].corner.y, segmentedSides[i].corner.z, segmentedSides[i].S1.x , segmentedSides[i].S1.y, segmentedSides[i].S1.z, segmentedSides[i].S2.x, segmentedSides[i].S2.y, segmentedSides[i].S2.z );
+//        }
     
 }
+
 
 float Cuboid::segmentCubeOnce(){
     //segment floor and ceiling
@@ -292,20 +312,26 @@ bool Cuboid::longestDimension(Plane3D patch){
 }
 
 
-void Cuboid::getDelayValues(size_t *delayValues, Vector3D L, Vector3D S, int Hz, int startIndex){
+void Cuboid::getDelayValues(size_t *delayValues, Vector3D leftEar, Vector3D rightEar, Vector3D S, int Hz, int startIndex){
     for (int i = startIndex; i< elements + startIndex; i++){
         Vector3D p = segmentedSides[i].getMidpoint();
 
         float d1 = S.subtract(p).magnitude();
-        float d2 = L.subtract(p).magnitude();
+        float left = leftEar.subtract(p).magnitude();
+        float right = rightEar.subtract(p).magnitude();
         
-//        printf("dist %f \n", d1+d2);
+        if (right < left){
+
+            delayValues[i] = static_cast<int>((d1+right)/SOUNDSPEED*Hz);
+        }
+        else if (left <= right){
+            delayValues[i] = static_cast<int>((d1+left)/SOUNDSPEED*Hz);
+        }
         
-        delayValues[i] = static_cast<int>((d1+d2)/SOUNDSPEED*Hz);
     }
 }
 
-void Cuboid::getSecondOrderDelayValues(size_t *delayValues, Vector3D L, Vector3D S, int Hz){
+void Cuboid::getSecondOrderDelayValues(float *delayValues, Vector3D L, Vector3D S, int Hz){
     
     
 //    for (int i = 0; i< 6; i++){
@@ -321,7 +347,7 @@ void Cuboid::getSecondOrderDelayValues(size_t *delayValues, Vector3D L, Vector3D
         float d1 = S.subtract(p).magnitude();
         float d2 = L.subtract(p).magnitude();
     
-        delayValues[i] = static_cast<int>((d1+d2)/SOUNDSPEED*Hz);
+        delayValues[i] = ((d1+d2)/SOUNDSPEED);
 //        printf("%d delay value : %zu \n", index, delayValues[i]);
         index ++;
     }
@@ -340,7 +366,7 @@ void Cuboid::getSecondOrderDelayValues(size_t *delayValues, Vector3D L, Vector3D
             
             float d3 = wall2.subtract(L).magnitude();
         
-            delayValues[index] = static_cast<int>((d1+d2+d3)/SOUNDSPEED*Hz);
+            delayValues[index] = ((d1+d2+d3)/SOUNDSPEED);
 //            printf("2nd order %d delay value : %zu \n", index, delayValues[index]);
             index++;
             }

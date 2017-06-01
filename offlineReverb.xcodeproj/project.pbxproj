@@ -12,6 +12,13 @@
 		2C0A8AD61E792F6E00E0C9F2 /* TransposeGain.hpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0A8AD41E792C9900E0C9F2 /* TransposeGain.hpp */; };
 		2C73BEB31E71A2DC00753DA8 /* MonteCarlo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C73BEB21E71A2DC00753DA8 /* MonteCarlo.cpp */; };
 		2CB800081EB7BEC9004D4BBA /* FirstOrderFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB800061EB7BEC9004D4BBA /* FirstOrderFilter.cpp */; };
+		2CCA70661ED49F3800EA1FE1 /* ERImpulseResponse.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA70581ED49F3800EA1FE1 /* ERImpulseResponse.c */; };
+		2CCA70671ED49F3800EA1FE1 /* HRTFFilter.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA705A1ED49F3800EA1FE1 /* HRTFFilter.c */; };
+		2CCA70681ED49F3800EA1FE1 /* ISM.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA705C1ED49F3800EA1FE1 /* ISM.c */; };
+		2CCA70691ED49F3800EA1FE1 /* ISMRoom.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA705E1ED49F3800EA1FE1 /* ISMRoom.c */; };
+		2CCA706A1ED49F3800EA1FE1 /* ISMVector2D.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA70601ED49F3800EA1FE1 /* ISMVector2D.c */; };
+		2CCA706B1ED49F3800EA1FE1 /* ISMVector3D.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA70621ED49F3800EA1FE1 /* ISMVector3D.c */; };
+		2CCA706C1ED49F3800EA1FE1 /* ISMWall.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA70641ED49F3800EA1FE1 /* ISMWall.c */; };
 		2CEA3E771E7128DA00DC0092 /* BMMultiTapDelay.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E751E7128DA00DC0092 /* BMMultiTapDelay.c */; };
 		2CEA3E7D1E71296400DC0092 /* TPCircularBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E791E71296400DC0092 /* TPCircularBuffer.c */; };
 		2CEA3E7E1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.c in Sources */ = {isa = PBXBuildFile; fileRef = 2CEA3E7B1E71296400DC0092 /* TPCircularBuffer+AudioBufferList.c */; };
@@ -46,6 +53,20 @@
 		2C73BEB21E71A2DC00753DA8 /* MonteCarlo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MonteCarlo.cpp; sourceTree = "<group>"; };
 		2CB800061EB7BEC9004D4BBA /* FirstOrderFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FirstOrderFilter.cpp; sourceTree = "<group>"; };
 		2CB800071EB7BEC9004D4BBA /* FirstOrderFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FirstOrderFilter.h; sourceTree = "<group>"; };
+		2CCA70581ED49F3800EA1FE1 /* ERImpulseResponse.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ERImpulseResponse.c; sourceTree = "<group>"; };
+		2CCA70591ED49F3800EA1FE1 /* ERImpulseResponse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ERImpulseResponse.h; sourceTree = "<group>"; };
+		2CCA705A1ED49F3800EA1FE1 /* HRTFFilter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = HRTFFilter.c; sourceTree = "<group>"; };
+		2CCA705B1ED49F3800EA1FE1 /* HRTFFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HRTFFilter.h; sourceTree = "<group>"; };
+		2CCA705C1ED49F3800EA1FE1 /* ISM.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ISM.c; sourceTree = "<group>"; };
+		2CCA705D1ED49F3800EA1FE1 /* ISM.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISM.h; sourceTree = "<group>"; };
+		2CCA705E1ED49F3800EA1FE1 /* ISMRoom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ISMRoom.c; sourceTree = "<group>"; };
+		2CCA705F1ED49F3800EA1FE1 /* ISMRoom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISMRoom.h; sourceTree = "<group>"; };
+		2CCA70601ED49F3800EA1FE1 /* ISMVector2D.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ISMVector2D.c; sourceTree = "<group>"; };
+		2CCA70611ED49F3800EA1FE1 /* ISMVector2D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISMVector2D.h; sourceTree = "<group>"; };
+		2CCA70621ED49F3800EA1FE1 /* ISMVector3D.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ISMVector3D.c; sourceTree = "<group>"; };
+		2CCA70631ED49F3800EA1FE1 /* ISMVector3D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISMVector3D.h; sourceTree = "<group>"; };
+		2CCA70641ED49F3800EA1FE1 /* ISMWall.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ISMWall.c; sourceTree = "<group>"; };
+		2CCA70651ED49F3800EA1FE1 /* ISMWall.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISMWall.h; sourceTree = "<group>"; };
 		2CEA3E751E7128DA00DC0092 /* BMMultiTapDelay.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BMMultiTapDelay.c; sourceTree = "<group>"; };
 		2CEA3E761E7128DA00DC0092 /* BMMultiTapDelay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BMMultiTapDelay.h; sourceTree = "<group>"; };
 		2CEA3E791E71296400DC0092 /* TPCircularBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = TPCircularBuffer.c; path = offlineReverb/TPCircularBuffer/TPCircularBuffer.c; sourceTree = "<group>"; };
@@ -64,7 +85,7 @@
 		3A9464301BA9032300818778 /* wavRead.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wavRead.h; sourceTree = "<group>"; };
 		3AA66E541B0B1196007B75E7 /* offlineReverb */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = offlineReverb; sourceTree = BUILT_PRODUCTS_DIR; };
 		3AA66E571B0B1196007B75E7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		3AA66E5E1B0B1255007B75E7 /* FDN.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FDN.cpp; sourceTree = "<group>"; };
+		3AA66E5E1B0B1255007B75E7 /* FDN.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FDN.cpp; sourceTree = "<group>"; wrapsLines = 0; };
 		3AA66E5F1B0B1255007B75E7 /* FDN.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FDN.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -79,6 +100,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2C1467101ECCC88B00DFC9DD /* ISM_Unit */ = {
+			isa = PBXGroup;
+			children = (
+				2CCA70581ED49F3800EA1FE1 /* ERImpulseResponse.c */,
+				2CCA70591ED49F3800EA1FE1 /* ERImpulseResponse.h */,
+				2CCA705A1ED49F3800EA1FE1 /* HRTFFilter.c */,
+				2CCA705B1ED49F3800EA1FE1 /* HRTFFilter.h */,
+				2CCA705C1ED49F3800EA1FE1 /* ISM.c */,
+				2CCA705D1ED49F3800EA1FE1 /* ISM.h */,
+				2CCA705E1ED49F3800EA1FE1 /* ISMRoom.c */,
+				2CCA705F1ED49F3800EA1FE1 /* ISMRoom.h */,
+				2CCA70601ED49F3800EA1FE1 /* ISMVector2D.c */,
+				2CCA70611ED49F3800EA1FE1 /* ISMVector2D.h */,
+				2CCA70621ED49F3800EA1FE1 /* ISMVector3D.c */,
+				2CCA70631ED49F3800EA1FE1 /* ISMVector3D.h */,
+				2CCA70641ED49F3800EA1FE1 /* ISMWall.c */,
+				2CCA70651ED49F3800EA1FE1 /* ISMWall.h */,
+			);
+			name = ISM_Unit;
+			sourceTree = "<group>";
+		};
 		3AA66E4B1B0B1196007B75E7 = {
 			isa = PBXGroup;
 			children = (
@@ -102,17 +144,16 @@
 		3AA66E561B0B1196007B75E7 /* offlineReverb */ = {
 			isa = PBXGroup;
 			children = (
-				2CB800061EB7BEC9004D4BBA /* FirstOrderFilter.cpp */,
-				2CB800071EB7BEC9004D4BBA /* FirstOrderFilter.h */,
+				2C1467101ECCC88B00DFC9DD /* ISM_Unit */,
 				2CEA3E751E7128DA00DC0092 /* BMMultiTapDelay.c */,
 				2CEA3E761E7128DA00DC0092 /* BMMultiTapDelay.h */,
 				2C0A8AD21E7848F300E0C9F2 /* Constants.h */,
 				2CEA3E821E713EF200DC0092 /* Cuboid.cpp */,
 				2CEA3E831E713EF200DC0092 /* Cuboid.hpp */,
-				2C0A8AD31E792C9900E0C9F2 /* TransposeGain.cpp */,
-				2C0A8AD41E792C9900E0C9F2 /* TransposeGain.hpp */,
 				3AA66E5E1B0B1255007B75E7 /* FDN.cpp */,
 				3AA66E5F1B0B1255007B75E7 /* FDN.h */,
+				2CB800061EB7BEC9004D4BBA /* FirstOrderFilter.cpp */,
+				2CB800071EB7BEC9004D4BBA /* FirstOrderFilter.h */,
 				2CEA3E8D1E713FDA00DC0092 /* Gains.cpp */,
 				2CEA3E8E1E713FDA00DC0092 /* Gains.hpp */,
 				3AA66E571B0B1196007B75E7 /* main.cpp */,
@@ -122,6 +163,8 @@
 				2CEA3E851E713EF200DC0092 /* Plane3D.hpp */,
 				2C0A8AD01E78474600E0C9F2 /* SingleTapDelay.cpp */,
 				2C0A8ACF1E78474600E0C9F2 /* SingleTapDelay.h */,
+				2C0A8AD31E792C9900E0C9F2 /* TransposeGain.cpp */,
+				2C0A8AD41E792C9900E0C9F2 /* TransposeGain.hpp */,
 				2CEA3E7F1E713E8100DC0092 /* Vector3D.cpp */,
 				2CEA3E801E713E8100DC0092 /* Vector3D.hpp */,
 				3A94642F1BA9032300818778 /* wavRead.cpp */,
@@ -186,15 +229,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2CCA70691ED49F3800EA1FE1 /* ISMRoom.c in Sources */,
 				2C0A8AD61E792F6E00E0C9F2 /* TransposeGain.hpp in Sources */,
 				2CEA3E771E7128DA00DC0092 /* BMMultiTapDelay.c in Sources */,
+				2CCA706C1ED49F3800EA1FE1 /* ISMWall.c in Sources */,
 				2C0A8AD11E78474600E0C9F2 /* SingleTapDelay.cpp in Sources */,
+				2CCA706A1ED49F3800EA1FE1 /* ISMVector2D.c in Sources */,
 				2CEA3E861E713EF200DC0092 /* Cuboid.cpp in Sources */,
+				2CCA70671ED49F3800EA1FE1 /* HRTFFilter.c in Sources */,
 				2CEA3E811E713E8100DC0092 /* Vector3D.cpp in Sources */,
 				2C73BEB31E71A2DC00753DA8 /* MonteCarlo.cpp in Sources */,
 				3AA66E601B0B1255007B75E7 /* FDN.cpp in Sources */,
 				2CB800081EB7BEC9004D4BBA /* FirstOrderFilter.cpp in Sources */,
+				2CCA70681ED49F3800EA1FE1 /* ISM.c in Sources */,
 				2C0A8AD51E792C9900E0C9F2 /* TransposeGain.cpp in Sources */,
+				2CCA70661ED49F3800EA1FE1 /* ERImpulseResponse.c in Sources */,
+				2CCA706B1ED49F3800EA1FE1 /* ISMVector3D.c in Sources */,
 				3AA66E581B0B1196007B75E7 /* main.cpp in Sources */,
 				2CEA3E7D1E71296400DC0092 /* TPCircularBuffer.c in Sources */,
 				3A9464311BA9032300818778 /* wavRead.cpp in Sources */,
