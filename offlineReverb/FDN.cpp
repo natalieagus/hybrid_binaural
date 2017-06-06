@@ -27,32 +27,35 @@
 //#define FDN_RT60 0.39f
 //#define GAINRT60 FDN_RT60
 #define FDN_SAMPLE_RATE 44100.f
-#define AREFIRSTORDER 64
+
 
 #define FDN_DFSR_MIN_DLY 1000
 #define FDN_DFSR_MAX_DLY 4000
 #define RADIUSOFHEAD 0.08f
-#define DMIN 1.0f
+#define DMIN 0.2f
 
 //todo:
 //do the ISM without diffuser, just pass to FDN straight
 //integrate ARE with the new HRTF method
 
 //***CHOOSE ONE MODE***//
-//#define FDN_ER_SECOND_ORDER true
-#define USE_ISM  //For ISM. Otherwise use ARE for order 2
+#define FDN_ER_SECOND_ORDER true
+//#define USE_ISM  //For ISM. Otherwise use ARE for order 2
 
 
 
 
 inline void FDN::setGains(){
-    this->RT60 = 0.36f;
-    this->roomWidth = 8.0f; //x
-    this->roomHeight = 5.0f; //y
-    this->roomCeiling = 3.1f; //z
-    this->soundSourceLoc = Vector3D(7.0f, 4.f, 1.2f);
-    this->listenerLoc = Vector3D(5.f, 2.55,1.2f);
     
+    //offline Version
+    this->RT60 = 0.88f;
+    this->roomWidth = 10.8f; //x
+    this->roomHeight = 10.9f; //y
+    this->roomCeiling = 3.5f; //z
+    this->listenerLoc = Vector3D(1.5f,1.5f, 1.2f);
+    this->soundSourceLoc = Vector3D(8.5f, 8.5f,1.2f);
+    
+
     
     Room = Cuboid(roomWidth, roomHeight, roomCeiling);
 
@@ -91,7 +94,7 @@ void FDN::impulseResponse(long numSamples, std::ofstream* outputFileL, std::ofst
     float directRayOut[2];
     float zero = 0.0f;
     float one = 1.0f;
-
+    float* AREArray = static_cast<float*>(malloc(sizeof(float)*NUMFDNDELAYS));
     
     for (int i = 0; i < numSamples; i++){
         erHighestOrder = 0.0f;
@@ -130,8 +133,15 @@ void FDN::impulseResponse(long numSamples, std::ofstream* outputFileL, std::ofst
         }
 
 #else
+
+        float ERR = 0.f;
         //multiply by division constant
         if (i<ARE_IRLength){
+            
+            for (int l = 0; l<NUMFDNDELAYS; l++){
+                AREArray[l] = ARE_ER_Taps_LeftEar[l][i] * LRDivisionConstant + ARE_ER_Taps_RightEar[l][i] * LRDivisionConstant;
+            }
+            
             erHighestOrder = leftEROutLastOrder[i] * LRDivisionConstant + rightEROutLastOrder[i] * LRDivisionConstant;
         }
         else{
@@ -139,16 +149,20 @@ void FDN::impulseResponse(long numSamples, std::ofstream* outputFileL, std::ofst
         }
         
         //FDN Processing
-        processAudio(&erHighestOrder, &fdnOutL, &fdnOutR);
+        processAudio(&erHighestOrder, &fdnOutL, &fdnOutR, AREArray);
+        vDSP_sve(AREArray, 1, &ERR, NUMFDNDELAYS);
         
         if (i<ARE_IRLength){
             *outputFileL << fdnOutL + leftEROut[i] + directHRTFOut[0]<< ",";
             *outputFileR << fdnOutR + rightEROut[i] + directHRTFOut[1]<< ",";
+//            *outputFileL << ERR << ",";
+//            *outputFileR << ERR << ",";
         }
         else{
             *outputFileL << fdnOutL  + directHRTFOut[0] << ",";
             *outputFileR << fdnOutR + directHRTFOut[1] << ",";
         }
+        memset(AREArray, 0, NUMFDNDELAYS);
 #endif
         
     }
@@ -346,10 +360,10 @@ FDN::FDN(int rvType)
         matrixAttenuation = 1.0f / sqrt(4.0f);
 
     // randomise output tap signs
-    for (int i = 0; i < NUMFDNDELAYS; i++){
-        tapSigns[i] = pow(-1.0, i * 31 % 71);
+//    for (int i = 0; i < NUMFDNDELAYS; i++){
+//        tapSigns[i] = pow(-1.0, i * 31 % 71);
         //printf("tapsigns %d %f \n", i, tapSigns[i]);
-    }
+//    }
     
     hadamardTransform(tapSigns, temp3, NUMFDNDELAYS);
     memcpy(tapSigns, temp3, sizeof(float) * NUMFDNDELAYS);
@@ -367,7 +381,7 @@ FDN::FDN(int rvType)
  *   PROCESS FDN FUNCTION        *
  ***********************************/
 
-void FDN::processAudio(float* pInput, float* pOutputL, float* pOutputR)
+void FDN::processAudio(float* pInput, float* pOutputL, float* pOutputR, float* inputChannel)
 {
     
     // Read the Input
@@ -403,7 +417,7 @@ void FDN::processAudio(float* pInput, float* pOutputL, float* pOutputR)
     // Randomizing the sign of the input sample vector
     vDSP_vmul(temp3, 1, tapSigns, 1, temp3, 1, NUMFDNDELAYS);
     // Mixing the input sample vector with the feedback vector
-    vDSP_vadd(temp3, 1, outputs, 1, outputs, 1, NUMFDNDELAYS);
+    vDSP_vadd(inputChannel, 1, outputs, 1, outputs, 1, NUMFDNDELAYS);
     
     // Matrix mixing operation
     hadamardTransform(outputs, temp3, NUMFDNDELAYS);
@@ -988,7 +1002,7 @@ size_t FDN::AREInit(size_t numberOfFirstOrder){
     float* leftEarDelayTimes = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
     float* rightEarDelayTimes = static_cast<float*>(malloc(sizeof(float)*numTotalSources));
     
-    Vector3D* ARESources = static_cast<Vector3D*>(malloc(sizeof(Vector3D)*numTotalSources));
+    wallIndex = static_cast<int*>(malloc(sizeof(int)*numTotalSources));
     
     RoomARE = Cuboid(roomWidth, roomHeight, roomCeiling);
     RoomARE.sliceCube((int)numberOfFirstOrder);
@@ -996,8 +1010,8 @@ size_t FDN::AREInit(size_t numberOfFirstOrder){
     GainValuesARE = Gains(DMIN, RoomARE.elements, RoomARE.area, RoomARE.volume, RT60, true);
     
     //this comes up with Beta
-    GainValuesARE.calculateAllGainsSecondOrder(temp3, RoomARE.segmentedSides, lLocLE, ssLoc, RT60, DMIN, numberOfFirstOrder, leftEarGains, ARESources);
-    GainValuesARE.calculateAllGainsSecondOrder(temp3, RoomARE.segmentedSides, lLocRE, ssLoc, RT60, DMIN, numberOfFirstOrder, rightEarGains, ARESources);
+    GainValuesARE.calculateAllGainsSecondOrder(temp3, RoomARE.segmentedSides, lLocLE, ssLoc, RT60, DMIN, numberOfFirstOrder, leftEarGains, wallIndex);
+    GainValuesARE.calculateAllGainsSecondOrder(temp3, RoomARE.segmentedSides, lLocRE, ssLoc, RT60, DMIN, numberOfFirstOrder, rightEarGains, wallIndex);
     
     //get the second order Delay times
     RoomARE.getSecondOrderDelayValues(leftEarDelayTimes, lLocLE, ssLoc, FDN_SAMPLE_RATE);
@@ -1019,6 +1033,14 @@ size_t FDN::AREInit(size_t numberOfFirstOrder){
     ARE_IRLength = 1+(longestReflectionTime*sampleRate)+HRTF_IR_LENGTH;
     printf("Longest reflection time :%zu\n", ARE_IRLength);
     
+    ARE_ER_Taps_LeftEar = static_cast<float**>(malloc(numberOfFirstOrder * sizeof(float *)));
+    ARE_ER_Taps_RightEar = static_cast<float**>(malloc(numberOfFirstOrder * sizeof(float *)));
+    for (int i=0; i<numberOfFirstOrder; i++){
+        ARE_ER_Taps_LeftEar[i] = static_cast<float*>(malloc(ARE_IRLength * sizeof(float)));
+        ARE_ER_Taps_RightEar[i] = static_cast<float*>(malloc(ARE_IRLength * sizeof(float)));
+    }
+    
+    
     
     leftEROut  = static_cast<float*>(malloc(sizeof(float)*ARE_IRLength));
     rightEROut = static_cast<float*>(malloc(sizeof(float)*ARE_IRLength));
@@ -1033,8 +1055,9 @@ size_t FDN::AREInit(size_t numberOfFirstOrder){
     ISMVector3D listenerRightEar = (ISMVector3D){lLoc.x + RADIUSOFHEAD,lLoc.y,lLoc.z};
 
     for (size_t i = 0; i<numTotalSources; i++){
-        anglesLeft[i]  = convertAzimuthToLeftEar(angleAzimuth(listenerLeftEar.x, listenerLeftEar.y,ARESources[i].x, ARESources[i].y));
-        anglesRight[i] = convertAzimuthToRightEar(angleAzimuth(listenerRightEar.x, listenerRightEar.y,ARESources[i].x, ARESources[i].y));
+
+        anglesLeft[i]  = convertAzimuthToLeftEar(angleAzimuth(listenerLeftEar.x, listenerLeftEar.y, RoomARE.segmentedSides[wallIndex[i]].getMidpoint().x, RoomARE.segmentedSides[wallIndex[i]].getMidpoint().y));
+        anglesRight[i] = convertAzimuthToRightEar(angleAzimuth(listenerRightEar.x, listenerRightEar.y,RoomARE.segmentedSides[wallIndex[i]].getMidpoint().x, RoomARE.segmentedSides[wallIndex[i]].getMidpoint().y));
 //        printf("Room wall loc %f %f, listener left ear %f %f Angle left %f listener right ear %f %f angle right %f \n",ARESources[i].x, ARESources[i].y, lLocLE.x, lLocLE.y, anglesLeft[i], lLocRE.x, lLocRE.y, anglesRight[i]);
     }
 
@@ -1047,7 +1070,7 @@ size_t FDN::AREInit(size_t numberOfFirstOrder){
                             leftEROutLastOrder, rightEROutLastOrder,
                             numTotalSources, ARE_IRLength,
                             numberOfFirstOrder,
-                            FDN_SAMPLE_RATE);
+                            FDN_SAMPLE_RATE, ARE_ER_Taps_LeftEar, ARE_ER_Taps_RightEar, wallIndex);
     
     
     

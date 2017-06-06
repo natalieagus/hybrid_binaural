@@ -52,7 +52,8 @@ void AREImpulseResponse(const float* timesL, const float* timesR,
                         float* leftOutLastOrder, float* rightOutLastOrder,
                         size_t numSources, size_t outLength,
                         size_t numFirstOrderSources,
-                        float fs);
+                        float fs, float** ARE_ER_ImpulseResponse_LeftEar,
+                        float** ARE_ER_ImpulseResponse_RightEar, int* wallIndex);
 #endif /* ERImpulseResponse_h */
 #ifdef __cplusplus
 }

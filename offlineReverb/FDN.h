@@ -31,7 +31,8 @@
 #define NUMDELAYSEXT 1024
 #define AUDIOCHANNELS 1
 #define CHANNELS 12
-#define NUMFDNDELAYS 64
+#define AREFIRSTORDER 64
+#define NUMFDNDELAYS AREFIRSTORDER
 
 
 class FDN
@@ -45,6 +46,11 @@ public:
  
     
 protected:    
+    
+    //***FDN INPUT CHANNEL RELATED**//
+    float** ARE_ER_Taps_LeftEar;
+    float** ARE_ER_Taps_RightEar;
+    int* wallIndex;
     
     //****ARE-RELATED****//
     size_t ARE_IRLength;
@@ -197,7 +203,7 @@ protected:
     
 public:
     void resetDelay();
-    void processAudio(float* pInput, float* pOutputL, float* pOutputR);
+    void processAudio(float* pInput, float* pOutputL, float* pOutputR, float* inputChannel);
     void impulseResponse(long numSamples, std::ofstream* outputFileL, std::ofstream* outputFileR);
     void densityResponse(long numSamples, std::ofstream* outputFile);
     void fileResponse(long numSamples, std::ifstream* inputFile, std::ofstream* outputFile);

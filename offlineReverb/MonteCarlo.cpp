@@ -165,7 +165,7 @@ Vector3D addV3(Vector3D a, Vector3D b){
 
 
 void randomPointsOnTriangle(Vector3D c, Vector3D s1, Vector3D s2, Vector3D* points, size_t numPoints){
-//    srand(100);
+
     // s1 and s2 should not be co-linear
     //    printf("S1 %f %f %f S2  %f %f %f \n", s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
     assert(!colinearQ(s1,s2));

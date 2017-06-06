@@ -64,7 +64,7 @@ typedef struct Gains{
     
     ////****METHODS****////
     void calculateUpsilon(Plane3D* surfaces, Vector3D L, int segments, float surfaceArea);
-    void calculateAllGainsSecondOrder(float*gains, Plane3D* surfaces, Vector3D L, Vector3D S,float rt60, float dminimum, size_t numberOfFirstOrder, float* gainCoefficients, Vector3D* ARESources);
+    void calculateAllGainsSecondOrder(float*gains, Plane3D* surfaces, Vector3D L, Vector3D S,float rt60, float dminimum, size_t numberOfFirstOrder, float* gainCoefficients, int* wallIndex);
     float calculateBetaFirstOrder(Plane3D* surfaces, Vector3D L, Vector3D S);
     void monteCarloBeta(Vector3D* points, Vector3D L, Vector3D S, Vector3D N, int numPoints, float* beta, float area, float dminimum);
     float pointCollectionFunction(Vector3D x, Vector3D L, Vector3D N, float visibility, float absorption);

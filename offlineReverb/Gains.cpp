@@ -159,7 +159,7 @@ double get_gain(double rt60, double delayLengthInSamples) {
 }
 
 
-void Gains::calculateAllGainsSecondOrder(float*gains, Plane3D* surfaces, Vector3D L, Vector3D S,float rt60, float dminimum, size_t numberOfFirstOrder, float* gainCoefficients, Vector3D* ARESources)
+void Gains::calculateAllGainsSecondOrder(float*gains, Plane3D* surfaces, Vector3D L, Vector3D S,float rt60, float dminimum, size_t numberOfFirstOrder, float* gainCoefficients, int* wallIndex)
 {
    
     numberDelays = (int)numberOfFirstOrder;
@@ -214,7 +214,7 @@ void Gains::calculateAllGainsSecondOrder(float*gains, Plane3D* surfaces, Vector3
 //        printf("Surfaces %f %f %f, %f %f %f, %f %f %f \n", surfaces[i].corner.x, surfaces[i].corner.y, surfaces[i].corner.z, surfaces[i].S1.x, surfaces[i].S1.y, surfaces[i].S1.z, surfaces[i].S2.x,surfaces[i].S2.y, surfaces[i].S2.z  );
         monteCarloBeta(points[i], L, S, surfaces[i].normal, NUM_MONTECARLO, &gainCoefficients[i], surfaces[i].getArea(), dminimum);
 //        printf("First order Beta: %f \n", gainCoefficients[i]);
-        ARESources[i] = Vector3D(surfaces[i].getMidpoint().x, surfaces[i].getMidpoint().y, surfaces[i].getMidpoint().z);
+        wallIndex[i] = i;
     }
     
     
@@ -266,7 +266,7 @@ void Gains::calculateAllGainsSecondOrder(float*gains, Plane3D* surfaces, Vector3
                     
                 }
 
-                ARESources[idx] = Vector3D(surfaces[patch].getMidpoint().x, surfaces[patch].getMidpoint().y, surfaces[patch].getMidpoint().z);
+                wallIndex[idx] = patch;
                 gainCoefficients[idx] = patchBeta;
                 idx++;
                 

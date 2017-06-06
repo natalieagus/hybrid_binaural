@@ -121,7 +121,8 @@ void AREImpulseResponse(const float* timesL, const float* timesR,
                        float* leftOutLastOrder, float* rightOutLastOrder,
                        size_t numSources, size_t outLength,
                        size_t numFirstOrderSources,
-                       float fs){
+                       float fs,float** ARE_ER_ImpulseResponse_LeftEar,
+                       float** ARE_ER_ImpulseResponse_RightEar, int* wallIndex){
     
     // initialize storage for filter impulse responses
     float impulseResponses [HRTF_NUM_ANGLES][HRTF_IR_LENGTH];
@@ -181,6 +182,12 @@ void AREImpulseResponse(const float* timesL, const float* timesR,
         
         // copy the filter IR to the output last order
         if (i>=numFirstOrderSources){
+            //get the index of the wall which this second order reflection come from
+            int wall = wallIndex[i];
+            //keep it in the corresponding array
+            ARE_ER_ImpulseResponse_LeftEar[wall][startPositionL] += gainsL[i];
+            ARE_ER_ImpulseResponse_RightEar[wall][startPositionR] += gainsR[i];
+            
             // copy the filter IR to output without HRTF
             //            printf("source number : %zu, gain L %f gain R %f \n", i, gainsL[i], gainsR[i]);
             leftOutLastOrder[startPositionL] += gainsL[i];
